@@ -41,42 +41,43 @@ def service_connection(key, mask):
     data = key.data
     if mask & selectors.EVENT_READ:
         raw_opcode = recvall(sock, 4)
-        """ if not raw_opcode: 
+        if not raw_opcode: 
             if data.username != '': 
                 del conns[data.username]
+            sel.unregister(sock)
+            sock.close() 
+        else: 
+            opcode = struct.unpack('>I', raw_opcode)[0]
+            if opcode == 0: 
+                raw_msglen = recvall(sock, 4)
+                msglen = struct.unpack('>I', raw_msglen)[0]
+                msg = recvall(sock, msglen).decode("utf-8", "strict")
+                username, password = msg.split(" ")
+                if username in users and users[username] == password: 
+                    # fill out conns and queue
+                    data.username=username
+                    conns[username] = (sock, data)
+                    # messages_queue[username] = queue.Queue()
+                else: 
+                    print("wrong username or password - write code to deal with this later")
+            if opcode == 2: # send a message 
+                sendto_len = struct.unpack('>I', recvall(sock, 4))[0] 
+                sendto = recvall(sock, sendto_len).decode("utf-8", "strict")
+                msg_len = struct.unpack('>I', recvall(sock, 4))[0]
+                msg = recvall(sock, msg_len).decode("utf-8", "strict")
 
-            else: """
-        opcode = struct.unpack('>I', raw_opcode)[0]
-        if opcode == 0: 
-            raw_msglen = recvall(sock, 4)
-            msglen = struct.unpack('>I', raw_msglen)[0]
-            msg = recvall(sock, msglen).decode("utf-8", "strict")
-            username, password = msg.split(" ")
-            if username in users and users[username] == password: 
-                # fill out conns and queue
-                data.username=username
-                conns[username] = (sock, data)
-                # messages_queue[username] = queue.Queue()
-            else: 
-                print("wrong username or password - write code to deal with this later")
-        if opcode == 2: # send a message 
-            sendto_len = struct.unpack('>I', recvall(sock, 4))[0] 
-            sendto = recvall(sock, sendto_len).decode("utf-8", "strict")
-            msg_len = struct.unpack('>I', recvall(sock, 4))[0]
-            msg = recvall(sock, msg_len).decode("utf-8", "strict")
-
-            if sendto not in conns: 
-                if sendto not in messages_queue: 
-                    messages_queue[sendto] = queue.Queue()
-                messages_queue[sendto].put((data.username, msg))
-                print("purple yams", messages_queue[sendto].get())
-            else: 
-                conns[sendto][1].outb += struct.pack('>I', 3) + struct.pack('>I', len(data.username)) + data.username.encode('utf-8') + struct.pack('>I', len(msg)) + msg.encode('utf-8')
+                if sendto not in conns: 
+                    if sendto not in messages_queue: 
+                        messages_queue[sendto] = queue.Queue()
+                    messages_queue[sendto].put((data.username, msg))
+                    # print("purple yams", messages_queue[sendto].get())
+                else: 
+                    conns[sendto][1].outb += struct.pack('>I', 3) + struct.pack('>I', len(data.username)) + data.username.encode('utf-8') + struct.pack('>I', len(msg)) + msg.encode('utf-8')
     if mask & selectors.EVENT_WRITE and data.username != '': 
-        if data.username in messages_queue and messages_queue[data.username].empty(): 
+        if data.username in messages_queue and not messages_queue[data.username].empty(): 
             while not messages_queue[data.username].empty(): 
                 sentfrom, msg = messages_queue[data.username].get()
-                sock.sendall(struct.pack('>I', 3) + struct.pack('I', len(sentfrom)) + sentfrom.encode('utf-8') + struct.pack('>I', len(msg)) + msg.encode('utf-8'))    
+                sock.sendall(struct.pack('>I', 3) + struct.pack('>I', len(sentfrom)) + sentfrom.encode('utf-8') + struct.pack('>I', len(msg)) + msg.encode('utf-8'))    
         if data.outb: 
             sock.sendall(data.outb)
             data.outb = data.outb[len(data.outb):]
