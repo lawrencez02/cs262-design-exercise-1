@@ -12,7 +12,7 @@ messages = {}
 sel_write = selectors.DefaultSelector() 
 sel_read = selectors.DefaultSelector()
 
-host, port = "", 12980
+host, port = "", 12984
 
 # takes user input 
 class UserInput(Cmd): 
@@ -22,7 +22,7 @@ class UserInput(Cmd):
         write_queue.put(struct.pack('>I', 0) + struct.pack('>I', len(msg)) + msg.encode('utf-8'))
 
     def do_find(self, exp): 
-        write_queue.put(struct.pack('>I', 1) + exp.encode('utf-8'))
+        write_queue.put(struct.pack('>I', 4) + struct.pack('>I', len(exp)) + exp.encode('utf-8'))
     
     def do_send(self, info): 
         send_to, msg = info.split(" ", 1)
@@ -69,6 +69,12 @@ class Client():
                     msg_len = struct.unpack('>I', self.recvall(4))[0]
                     msg = self.recvall(msg_len).decode("utf-8", "strict")
                     print(sentfrom, ": ", msg)
+                if opcode == 5: 
+                    result_len = struct.unpack('>I', self.recvall(4))[0]
+                    result = self.recvall(result_len).decode("utf-8", "strict")
+                    print(result.split(' '))
+                if opcode == 6: 
+                    print("You are trying to send a message to a user that doesn't exist.")
                 
                 
 

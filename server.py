@@ -4,12 +4,13 @@ import selectors
 import types 
 import struct 
 import queue
+import re
 
 sel = selectors.DefaultSelector() 
 users = {"catherine": "c", "test": "test"} # username as key and password and value
 conns = {} # username as key and conn (server side connection), data as value
 messages_queue = {} # who it's supposed to go to as key and a queue of (sentfrom, messages) as value
-host, port = "", 12980
+host, port = "", 12984
 
 # create server socket
 lsock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -65,14 +66,23 @@ def service_connection(key, mask):
                 sendto = recvall(sock, sendto_len).decode("utf-8", "strict")
                 msg_len = struct.unpack('>I', recvall(sock, 4))[0]
                 msg = recvall(sock, msg_len).decode("utf-8", "strict")
-
-                if sendto not in conns: 
+                if sendto not in conns:
+                    if sendto not in users: 
+                        sock.sendall(struct.pack('>I', 6))
                     if sendto not in messages_queue: 
                         messages_queue[sendto] = queue.Queue()
                     messages_queue[sendto].put((data.username, msg))
                     # print("purple yams", messages_queue[sendto].get())
                 else: 
                     conns[sendto][1].outb += struct.pack('>I', 3) + struct.pack('>I', len(data.username)) + data.username.encode('utf-8') + struct.pack('>I', len(msg)) + msg.encode('utf-8')
+            if opcode == 4: # return the list of people using wildcard or whatever 
+                exp_len = struct.unpack('>I', recvall(sock, 4))[0]
+                exp = recvall(sock, exp_len).decode("utf-8", "strict")
+                exp_str = '.*' + exp + '.*'
+                regex = re.compile(exp_str)
+                result = ' '.join(list(filter(regex.match, users.keys())))
+                sock.sendall(struct.pack('>I', 5) + struct.pack('>I', len(result)) + result.encode("utf-8"))
+
     if mask & selectors.EVENT_WRITE and data.username != '': 
         if data.username in messages_queue and not messages_queue[data.username].empty(): 
             while not messages_queue[data.username].empty(): 
