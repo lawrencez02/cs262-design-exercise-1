@@ -7,9 +7,9 @@ import queue
 
 sel = selectors.DefaultSelector() 
 users = {"catherine": "c", "test": "test"} # username as key and password and value
-conns = {"test": (None, types.SimpleNamespace(inb=b"", outb=b""))} # username as key and conn (server side connection), data as value
-messages_queue = {"test": queue.Queue()} # who it's supposed to go to as key and a queue of (sentfrom, messages) as value
-host, port = "", 12987
+conns = {} # username as key and conn (server side connection), data as value
+messages_queue = {} # who it's supposed to go to as key and a queue of (sentfrom, messages) as value
+host, port = "", 12980
 
 # create server socket
 lsock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -41,6 +41,11 @@ def service_connection(key, mask):
     data = key.data
     if mask & selectors.EVENT_READ:
         raw_opcode = recvall(sock, 4)
+        """ if not raw_opcode: 
+            if data.username != '': 
+                del conns[data.username]
+
+            else: """
         opcode = struct.unpack('>I', raw_opcode)[0]
         if opcode == 0: 
             raw_msglen = recvall(sock, 4)
@@ -51,7 +56,7 @@ def service_connection(key, mask):
                 # fill out conns and queue
                 data.username=username
                 conns[username] = (sock, data)
-                messages_queue[username] = queue.Queue()
+                # messages_queue[username] = queue.Queue()
             else: 
                 print("wrong username or password - write code to deal with this later")
         if opcode == 2: # send a message 
@@ -60,13 +65,15 @@ def service_connection(key, mask):
             msg_len = struct.unpack('>I', recvall(sock, 4))[0]
             msg = recvall(sock, msg_len).decode("utf-8", "strict")
 
-            if conns[sendto][0] == None: 
+            if sendto not in conns: 
+                if sendto not in messages_queue: 
+                    messages_queue[sendto] = queue.Queue()
                 messages_queue[sendto].put((data.username, msg))
-                # print("purple yams", messages_queue[sendto].get())
+                print("purple yams", messages_queue[sendto].get())
             else: 
                 conns[sendto][1].outb += struct.pack('>I', 3) + struct.pack('>I', len(data.username)) + data.username.encode('utf-8') + struct.pack('>I', len(msg)) + msg.encode('utf-8')
     if mask & selectors.EVENT_WRITE and data.username != '': 
-        if not messages_queue[data.username].empty(): 
+        if data.username in messages_queue and messages_queue[data.username].empty(): 
             while not messages_queue[data.username].empty(): 
                 sentfrom, msg = messages_queue[data.username].get()
                 sock.sendall(struct.pack('>I', 3) + struct.pack('I', len(sentfrom)) + sentfrom.encode('utf-8') + struct.pack('>I', len(msg)) + msg.encode('utf-8'))    

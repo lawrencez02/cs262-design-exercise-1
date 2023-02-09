@@ -5,17 +5,16 @@ import selectors
 import types 
 import struct 
 import threading
-# operation codes: (find, 1)
 # both are threadsafe 
-read_queue = queue.Queue() 
 write_queue = queue.Queue() 
 messages = {}
 
 sel_write = selectors.DefaultSelector() 
 sel_read = selectors.DefaultSelector()
 
-host, port = "", 12987
+host, port = "", 12980
 
+# takes user input 
 class UserInput(Cmd): 
     def do_login(self, login_info): 
         username, password = login_info.split(" ")
