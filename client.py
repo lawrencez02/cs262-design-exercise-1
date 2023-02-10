@@ -5,6 +5,7 @@ import selectors
 import types 
 import struct 
 import threading
+import sys 
 # both are threadsafe 
 write_queue = queue.Queue() 
 messages = {}
