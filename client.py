@@ -12,7 +12,7 @@ messages = {}
 sel_write = selectors.DefaultSelector() 
 sel_read = selectors.DefaultSelector()
 
-host, port = "", 12984
+host, port = sys.argv[1], sys.argv[2]
 
 # takes user input 
 class UserInput(Cmd): 
@@ -75,8 +75,6 @@ class Client():
                     print(result.split(' '))
                 if opcode == 6: 
                     print("You are trying to send a message to a user that doesn't exist.")
-                
-                
 
 
 if __name__ == '__main__':

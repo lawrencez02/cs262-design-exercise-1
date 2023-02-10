@@ -47,7 +47,7 @@ class Server():
             if not raw_opcode: 
                 if data.username != '': 
                     del conns[data.username]
-                sel.unregister(sock)
+                self.sel.unregister(sock)
                 sock.close() 
             else: 
                 opcode = struct.unpack('>I', raw_opcode)[0]
