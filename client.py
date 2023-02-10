@@ -27,7 +27,7 @@ class UserInput(Cmd):
     def do_send(self, info): 
         send_to, msg = info.split(" ", 1)
         write_queue.put(struct.pack('>I', 2) + struct.pack('>I', len(send_to)) + send_to.encode('utf-8') + struct.pack('>I', len(msg)) + msg.encode('utf-8'))
-
+    
 class Client(): 
     def __init__(self): 
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
