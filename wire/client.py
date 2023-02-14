@@ -13,7 +13,7 @@ messages = {}
 sel_write = selectors.DefaultSelector() 
 sel_read = selectors.DefaultSelector()
 
-host, port = sys.argv[1], sys.argv[2]
+host, port = sys.argv[1], int(sys.argv[2])
 
 # takes user input 
 class UserInput(Cmd): 
@@ -35,7 +35,6 @@ class Client():
         sock.setblocking(True)
         sock.connect((host, port))
         self.sock = sock 
-        
     
     def recvall(self, n): 
         data = bytearray() 

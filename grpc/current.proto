@@ -1,0 +1,19 @@
+syntax = "proto3"; 
+
+service ChatBot {
+    rpc send (stream Message) returns (Empty) {}
+    rpc receive (Empty) returns (stream Message) {}
+    rpc login (User) returns (Empty) {}
+}
+
+message Message {
+    string message = 1;
+    string from_ = 2; 
+    string to_ = 3; 
+}
+
+message Empty {}
+
+message User {
+    string username = 1;
+}
