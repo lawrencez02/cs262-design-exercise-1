@@ -6,10 +6,14 @@ import struct
 import queue
 import re
 
-users = {"catherine": "c", "test": "test"} # username as key and password and value
-conns = {} # username as key and conn (server side connection), data as value
-messages_queue = {} # who it's supposed to go to as key and a queue of (sentfrom, messages) as value
-host, port = "", 12984
+# stores all users: username maps to password
+users = {"catherine": "c", "test": "test"}
+# stores all online users: username maps to (socket, data)
+conns = {} 
+# intended (offline) recipient maps to a queue of (sender, message)
+messages_queue = {}
+host, port = "", 12984 # empty host string means server is reachable by any address it has
+
 
 class Server(): 
     def __init__(self): 
@@ -23,6 +27,7 @@ class Server():
         self.sock = lsock 
     
     def recvall(self, sock, n): 
+        # Receive exactly n bytes from specified socket, returning None otherwise
         data = bytearray() 
         while len(data) < n: 
             packet = sock.recv(n - len(data))
@@ -31,7 +36,7 @@ class Server():
             data.extend(packet) 
         return data
 
-    def accept_wrapper(self, sock):   
+    def accept_wrapper(self):
         conn, addr = self.sock.accept() 
         print(f"Accepted connection from {addr}")
         conn.setblocking(False)
@@ -44,26 +49,26 @@ class Server():
         data = key.data
         if mask & selectors.EVENT_READ:
             raw_opcode = self.recvall(sock, 4)
-            if not raw_opcode: 
-                if data.username != '': 
+            # if client socket has closed, unregister connection and close corresponding server socket
+            if raw_opcode is None: 
+                if data.username != "": 
                     del conns[data.username]
                 self.sel.unregister(sock)
                 sock.close() 
             else: 
                 opcode = struct.unpack('>I', raw_opcode)[0]
-                if opcode == 0: 
+                if opcode == 0: # client socket is trying to login with a username/password
                     raw_msglen = self.recvall(sock, 4)
                     msglen = struct.unpack('>I', raw_msglen)[0]
                     msg = self.recvall(sock, msglen).decode("utf-8", "strict")
                     username, password = msg.split(" ")
                     if username in users and users[username] == password: 
                         # fill out conns and queue
-                        data.username=username
+                        data.username = username
                         conns[username] = (sock, data)
-                        # messages_queue[username] = queue.Queue()
                     else: 
                         print("wrong username or password - write code to deal with this later")
-                if opcode == 2: # send a message 
+                elif opcode == 2: # client socket is trying to send a message
                     sendto_len = struct.unpack('>I', self.recvall(sock, 4))[0] 
                     sendto = self.recvall(sock, sendto_len).decode("utf-8", "strict")
                     msg_len = struct.unpack('>I', self.recvall(sock, 4))[0]
@@ -74,10 +79,9 @@ class Server():
                         if sendto not in messages_queue: 
                             messages_queue[sendto] = queue.Queue()
                         messages_queue[sendto].put((data.username, msg))
-                        # print("purple yams", messages_queue[sendto].get())
                     else: 
                         conns[sendto][1].outb += struct.pack('>I', 3) + struct.pack('>I', len(data.username)) + data.username.encode('utf-8') + struct.pack('>I', len(msg)) + msg.encode('utf-8')
-                if opcode == 4: # return the list of people using wildcard or whatever 
+                elif opcode == 4: # client socket trying to find users 
                     exp_len = struct.unpack('>I', self.recvall(sock, 4))[0]
                     exp = self.recvall(sock, exp_len).decode("utf-8", "strict")
                     exp_str = '.*' + exp + '.*'
@@ -92,18 +96,18 @@ class Server():
                     sock.sendall(struct.pack('>I', 3) + struct.pack('>I', len(sentfrom)) + sentfrom.encode('utf-8') + struct.pack('>I', len(msg)) + msg.encode('utf-8'))    
             if data.outb: 
                 sock.sendall(data.outb)
-                data.outb = data.outb[len(data.outb):]
+                data.outb = ""
     
     def run(self): 
         while True: 
             events = self.sel.select(timeout=None)
             for key, mask in events: 
                 if key.data is None: 
-                    self.accept_wrapper(key.fileobj)
+                    self.accept_wrapper()
                 else: 
                     self.service_connection(key, mask)
         sel.close() 
         
+
 if __name__ == '__main__': 
-    server = Server() 
-    server.run()
+    Server().run()
