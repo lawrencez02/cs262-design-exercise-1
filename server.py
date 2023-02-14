@@ -96,7 +96,7 @@ class Server():
                     sock.sendall(struct.pack('>I', 3) + struct.pack('>I', len(sentfrom)) + sentfrom.encode('utf-8') + struct.pack('>I', len(msg)) + msg.encode('utf-8'))    
             if data.outb: 
                 sock.sendall(data.outb)
-                data.outb = ""
+                data.outb = b""
     
     def run(self): 
         while True: 
