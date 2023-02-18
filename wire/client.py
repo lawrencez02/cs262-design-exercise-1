@@ -21,9 +21,18 @@ host, port = sys.argv[1], int(sys.argv[2])
 # takes and parses command-line user input for all different commands
 class UserInput(Cmd): 
     def do_login(self, login_info): 
-        username, password = login_info.split(" ")
-        msg = username + " " + password
-        write_queue.put(struct.pack('>I', 0) + struct.pack('>I', len(msg)) + msg.encode('utf-8'))
+        login_info = login_info.split()
+        if len(login_info) != 2:
+            print("Incorrect arguments: correct form is login [username] [password]. Please try again!")
+            return
+        username, password = login_info
+        if '.' in username or '*' in username:
+            print("Characters '.' and '*' not allowed in usernames. Please try again!")
+            return
+        if len(username) >= 128 or len(password) >= 128:
+            print("Username or password is too long. Please try again!")
+            return
+        write_queue.put(struct.pack('>I', 0) + struct.pack('>I', len(username)) + username.encode('utf-8') + struct.pack('>I', len(password)) + password.encode('utf-8'))
 
     def do_find(self, exp): 
         write_queue.put(struct.pack('>I', 4) + struct.pack('>I', len(exp)) + exp.encode('utf-8'))
