@@ -45,8 +45,7 @@ class Server():
         self.sel.register(conn, events, data=data)
 
     def service_connection(self, key, mask):
-        sock = key.fileobj
-        data = key.data
+        sock, data = key.fileobj, key.data
         if mask & selectors.EVENT_READ:
             raw_opcode = self._recvall(sock, 4)
             # if client socket has closed, unregister connection and close corresponding server socket
@@ -91,7 +90,7 @@ class Server():
                     exp = self._recvall(sock, exp_len).decode("utf-8", "strict")
                     exp_str = '.*' + exp + '.*'
                     regex = re.compile(exp_str)
-                    result = ' '.join(list(filter(regex.match, users.keys())))
+                    result = ', '.join(list(filter(regex.match, users.keys())))
                     sock.sendall(struct.pack('>I', FIND_RESULT) + struct.pack('>I', len(result)) + result.encode("utf-8"))
 
         if mask & selectors.EVENT_WRITE and data.username != '': 

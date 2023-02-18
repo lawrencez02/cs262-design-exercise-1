@@ -62,14 +62,14 @@ class Client():
             data.extend(packet) 
         return data 
 
-    def send_msg(self): 
+    def send(self): 
         sel_write.register(self.sock, selectors.EVENT_WRITE)
         while True: 
             for key, mask in sel_write.select(timeout=None): 
                 outb = write_queue.get()
                 self.sock.sendall(outb)
     
-    def receive_msg(self): 
+    def receive(self): 
         sel_read.register(self.sock, selectors.EVENT_READ)
         while True: 
             for key, mask in sel_read.select(timeout=None): 
@@ -84,15 +84,15 @@ class Client():
                 elif statuscode in [LOGIN_ERROR, FIND_RESULT, SEND_ERROR]:
                     msg_len = struct.unpack('>I', self._recvall(4))[0]
                     msg = self._recvall(msg_len).decode("utf-8", "strict")
-                    print(msg.split(' ') if statuscode == FIND_RESULT else msg)
+                    print(msg)
 
 
 if __name__ == '__main__':
     # instantiate client and run separate threads for command-line input, sending messages, and receiving messages
     client = Client() 
-    threading.Thread(target=client.receive_msg).start()
+    threading.Thread(target=client.receive).start()
     threading.Thread(target=UserInput().cmdloop).start()
-    threading.Thread(target=client.send_msg).start()
+    threading.Thread(target=client.send).start()
     
     
    
