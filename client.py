@@ -8,16 +8,17 @@ import threading
 import sys 
 
 
-# both are threadsafe 
+# thread-safe queue for outgoing messages from client
 write_queue = queue.Queue() 
-
+# selector used by client's write thread to know when socket is writable
 sel_write = selectors.DefaultSelector() 
+# selector used by client's read thread to know when socket is readable
 sel_read = selectors.DefaultSelector()
 
 host, port = sys.argv[1], int(sys.argv[2])
 
 
-# takes user input 
+# takes and parses command-line user input for all different commands
 class UserInput(Cmd): 
     def do_login(self, login_info): 
         username, password = login_info.split(" ")
@@ -37,9 +38,9 @@ class Client():
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.sock.setblocking(True)
         self.sock.connect((host, port))
-        
+    
+    # Receive exactly n bytes from server, returning None otherwise
     def recvall(self, n): 
-        # Receive exactly n bytes from specified socket, returning None otherwise
         data = bytearray() 
         while len(data) < n: 
             packet = self.sock.recv(n - len(data))
@@ -76,6 +77,7 @@ class Client():
 
 
 if __name__ == '__main__':
+    # instantiate client and run separate threads for command-line input, sending messages, and receiving messages
     client = Client() 
     threading.Thread(target=client.receive_msg).start()
     threading.Thread(target=UserInput().cmdloop).start()

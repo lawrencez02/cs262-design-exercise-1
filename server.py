@@ -26,8 +26,8 @@ class Server():
         self.sel.register(lsock, selectors.EVENT_READ, data=None)
         self.sock = lsock 
     
+    # Receive exactly n bytes from specified socket, returning None otherwise
     def recvall(self, sock, n): 
-        # Receive exactly n bytes from specified socket, returning None otherwise
         data = bytearray() 
         while len(data) < n: 
             packet = sock.recv(n - len(data))
