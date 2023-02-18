@@ -2,10 +2,10 @@ from cmd import Cmd
 import queue 
 import socket 
 import selectors
-import types 
 import struct 
 import threading
 import sys 
+from constants import *
 
 
 # thread-safe queue for outgoing messages from client
@@ -29,17 +29,21 @@ class UserInput(Cmd):
         if '.' in username or '*' in username:
             print("Characters '.' and '*' not allowed in usernames. Please try again!")
             return
-        if len(username) >= 128 or len(password) >= 128:
+        if len(username) >= MAX_NAME_PASS_LEN or len(password) >= MAX_NAME_PASS_LEN:
             print("Username or password is too long. Please try again!")
             return
-        write_queue.put(struct.pack('>I', 0) + struct.pack('>I', len(username)) + username.encode('utf-8') + struct.pack('>I', len(password)) + password.encode('utf-8'))
+        write_queue.put(struct.pack('>I', LOGIN) + struct.pack('>I', len(username)) + username.encode('utf-8') + struct.pack('>I', len(password)) + password.encode('utf-8'))
 
     def do_find(self, exp): 
-        write_queue.put(struct.pack('>I', 4) + struct.pack('>I', len(exp)) + exp.encode('utf-8'))
+        write_queue.put(struct.pack('>I', FIND) + struct.pack('>I', len(exp)) + exp.encode('utf-8'))
     
     def do_send(self, info): 
-        send_to, msg = info.split(" ", 1)
-        write_queue.put(struct.pack('>I', 2) + struct.pack('>I', len(send_to)) + send_to.encode('utf-8') + struct.pack('>I', len(msg)) + msg.encode('utf-8'))
+        info = info.split(' ', 1)
+        if len(info) != 2:
+            print("Incorrect arguments: correct form is send [username] [message]. Please try again!")
+            return
+        send_to, msg = info
+        write_queue.put(struct.pack('>I', SEND) + struct.pack('>I', len(send_to)) + send_to.encode('utf-8') + struct.pack('>I', len(msg)) + msg.encode('utf-8'))
     
 
 class Client(): 
@@ -49,7 +53,7 @@ class Client():
         self.sock.connect((host, port))
     
     # Receive exactly n bytes from server, returning None otherwise
-    def recvall(self, n): 
+    def _recvall(self, n): 
         data = bytearray() 
         while len(data) < n: 
             packet = self.sock.recv(n - len(data))
@@ -69,20 +73,18 @@ class Client():
         sel_read.register(self.sock, selectors.EVENT_READ)
         while True: 
             for key, mask in sel_read.select(timeout=None): 
-                raw_opcode = self.recvall(4)
-                opcode = struct.unpack('>I', raw_opcode)[0]
-                if opcode == 3:
-                    sentfrom_len = struct.unpack('>I', self.recvall(4))[0]
-                    sentfrom = self.recvall(sentfrom_len).decode("utf-8", "strict")
-                    msg_len = struct.unpack('>I', self.recvall(4))[0]
-                    msg = self.recvall(msg_len).decode("utf-8", "strict")
+                raw_statuscode = self._recvall(4)
+                statuscode = struct.unpack('>I', raw_statuscode)[0]
+                if statuscode == RECEIVE:
+                    sentfrom_len = struct.unpack('>I', self._recvall(4))[0]
+                    sentfrom = self._recvall(sentfrom_len).decode("utf-8", "strict")
+                    msg_len = struct.unpack('>I', self._recvall(4))[0]
+                    msg = self._recvall(msg_len).decode("utf-8", "strict")
                     print(sentfrom, ": ", msg, sep="")
-                if opcode == 5:
-                    result_len = struct.unpack('>I', self.recvall(4))[0]
-                    result = self.recvall(result_len).decode("utf-8", "strict")
-                    print(result.split(' '))
-                if opcode == 6: 
-                    print("You are trying to send a message to a user that doesn't exist.")
+                elif statuscode in [LOGIN_ERROR, FIND_RESULT, SEND_ERROR]:
+                    msg_len = struct.unpack('>I', self._recvall(4))[0]
+                    msg = self._recvall(msg_len).decode("utf-8", "strict")
+                    print(msg.split(' ') if statuscode == FIND_RESULT else msg)
 
 
 if __name__ == '__main__':
