@@ -26,6 +26,9 @@ class UserInput(Cmd):
     def do_register(self, register_info):
         self._register_or_login(register_info, REGISTER)
 
+    def do_logout(self, info):
+        write_queue.put(struct.pack('>I', LOGOUT))
+
     def do_find(self, exp): 
         if len(exp) > MAX_LENGTH:
             print("Expression is too long. Please try again!")

@@ -66,6 +66,7 @@ class Server():
                     del active_conns[data.username]
                 self.sel.unregister(sock)
                 sock.close() 
+                print(f"Closed socket with address {data.addr}")
                 return
             opcode = struct.unpack('>I', raw_opcode)[0]
 
@@ -100,6 +101,14 @@ class Server():
                 else: 
                     print(f"Unsuccessful login attempt by {username}")
                     self._send_msg(sock, LOGIN_ERROR, "Incorrect username or password. Please try again!")
+            elif opcode == LOGOUT:
+                if not data.username:
+                    self._send_msg(sock, PRIVILEGE_ERROR, "You need to be logged in to log out. Please try again!")
+                    return
+                active_conns.pop(data.username, None)
+                print(f"{data.username} logged out successfully")
+                data.username = ''
+                self._send_msg(sock, LOGOUT_CONFIRM, "Logged out successfully!")
             elif opcode == SEND: # client socket is trying to send a message
                 sendto, msg = self._recv_n_args(sock, 2)
                 if not data.username:
