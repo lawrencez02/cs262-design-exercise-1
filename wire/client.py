@@ -26,15 +26,19 @@ class UserInput(Cmd):
             print("Incorrect arguments: correct form is login [username] [password]. Please try again!")
             return
         username, password = login_info
+        # TODO: move to register
         if '.' in username or '*' in username:
             print("Characters '.' and '*' not allowed in usernames. Please try again!")
             return
-        if len(username) >= MAX_NAME_PASS_LEN or len(password) >= MAX_NAME_PASS_LEN:
+        if len(username) > MAX_LENGTH or len(password) > MAX_LENGTH:
             print("Username or password is too long. Please try again!")
             return
         write_queue.put(struct.pack('>I', LOGIN) + struct.pack('>I', len(username)) + username.encode('utf-8') + struct.pack('>I', len(password)) + password.encode('utf-8'))
 
     def do_find(self, exp): 
+        if len(exp) > MAX_LENGTH:
+            print("Expression is too long. Please try again!")
+            return
         write_queue.put(struct.pack('>I', FIND) + struct.pack('>I', len(exp)) + exp.encode('utf-8'))
     
     def do_send(self, info): 
@@ -43,6 +47,9 @@ class UserInput(Cmd):
             print("Incorrect arguments: correct form is send [username] [message]. Please try again!")
             return
         send_to, msg = info
+        if len(send_to) > MAX_LENGTH or len(msg) > MAX_LENGTH:
+            print("Username or message is too long. Please try again!")
+            return
         write_queue.put(struct.pack('>I', SEND) + struct.pack('>I', len(send_to)) + send_to.encode('utf-8') + struct.pack('>I', len(msg)) + msg.encode('utf-8'))
     
 

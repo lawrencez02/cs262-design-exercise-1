@@ -1,6 +1,6 @@
 # General constants
 PORT = 12984
-MAX_NAME_PASS_LEN = 128 # max username length = max password length
+MAX_LENGTH = 2 ** 12 # max argument length (e.g., username, password, message, etc.)
 
 
 # OP CODES (what client sends to server)

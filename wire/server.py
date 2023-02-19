@@ -81,13 +81,11 @@ class Server():
                 data.outb = b""
 
         if mask & selectors.EVENT_READ:
-            if (data.username and opcode in [LOGIN]) or (not data.username and opcode in [SEND]):
-                self._send_msg(sock, PRIVILEGE_ERROR, "You are in the wrong logged in/out state for this command. Please try again!")
-                self._recv_n_args(sock, 2)
-                return
-
             if opcode == LOGIN: # client socket is trying to login with a username/password
                 username, password = self._recv_n_args(sock, 2)
+                if data.username:
+                    self._send_msg(sock, PRIVILEGE_ERROR, "You need to be not signed in to log in as a user. Please try again!")
+                    return
                 if username in users and users[username] == password: 
                     # fill out active_conns and queue
                     data.username = username
@@ -99,6 +97,9 @@ class Server():
                     self._send_msg(sock, LOGIN_ERROR, "Incorrect username or password. Please try again!")
             elif opcode == SEND: # client socket is trying to send a message
                 sendto, msg = self._recv_n_args(sock, 2)
+                if not data.username:
+                    self._send_msg(sock, PRIVILEGE_ERROR, "You need to be logged in to send a message. Please try again!")
+                    return
                 if sendto not in active_conns:
                     if sendto not in users: 
                         self._send_msg(sock, SEND_ERROR, "Recipient user does not exist. Please try again!")
