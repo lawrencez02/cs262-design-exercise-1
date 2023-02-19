@@ -81,17 +81,22 @@ class Server():
                 data.outb = b""
 
         if mask & selectors.EVENT_READ:
-            if opcode == LOGIN: # client socket is trying to login with a username/password
+            if opcode == LOGIN or opcode == REGISTER: # client socket is trying to login or register with a username/password
                 username, password = self._recv_n_args(sock, 2)
                 if data.username:
-                    self._send_msg(sock, PRIVILEGE_ERROR, "You need to be not signed in to log in as a user. Please try again!")
+                    self._send_msg(sock, PRIVILEGE_ERROR, "You need to be not signed in to log in or register as a user. Please try again!")
                     return
+                if opcode == REGISTER:
+                    if username in users:
+                        self._send_msg(sock, REGISTER_ERROR, "Username already exists. Please try again!")
+                        return
+                    users[username] = password
                 if username in users and users[username] == password: 
                     # fill out active_conns and queue
                     data.username = username
                     active_conns[username] = (sock, data)
                     print(f"{username} logged in successfully")
-                    self._send_msg(sock, LOGIN_CONFIRM, f"Logged in as {username}!")
+                    self._send_msg(sock, LOGIN_CONFIRM if opcode == LOGIN else REGISTER_CONFIRM, f"Logged in as {username}!")
                 else: 
                     print(f"Unsuccessful login attempt by {username}")
                     self._send_msg(sock, LOGIN_ERROR, "Incorrect username or password. Please try again!")

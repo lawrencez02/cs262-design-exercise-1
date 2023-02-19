@@ -21,19 +21,10 @@ host, port = sys.argv[1], int(sys.argv[2])
 # takes and parses command-line user input for all different commands
 class UserInput(Cmd): 
     def do_login(self, login_info): 
-        login_info = login_info.split()
-        if len(login_info) != 2:
-            print("Incorrect arguments: correct form is login [username] [password]. Please try again!")
-            return
-        username, password = login_info
-        # TODO: move to register
-        if '.' in username or '*' in username:
-            print("Characters '.' and '*' not allowed in usernames. Please try again!")
-            return
-        if len(username) > MAX_LENGTH or len(password) > MAX_LENGTH:
-            print("Username or password is too long. Please try again!")
-            return
-        write_queue.put(struct.pack('>I', LOGIN) + struct.pack('>I', len(username)) + username.encode('utf-8') + struct.pack('>I', len(password)) + password.encode('utf-8'))
+        self._register_or_login(login_info, LOGIN)
+
+    def do_register(self, register_info):
+        self._register_or_login(register_info, REGISTER)
 
     def do_find(self, exp): 
         if len(exp) > MAX_LENGTH:
@@ -51,7 +42,20 @@ class UserInput(Cmd):
             print("Username or message is too long. Please try again!")
             return
         write_queue.put(struct.pack('>I', SEND) + struct.pack('>I', len(send_to)) + send_to.encode('utf-8') + struct.pack('>I', len(msg)) + msg.encode('utf-8'))
-    
+
+    def _register_or_login(self, info, opcode):
+        info = info.split()
+        if len(info) != 2:
+            print(f"Incorrect arguments: correct form is {'login' if opcode == LOGIN else 'register'} [username] [password]. Please try again!")
+            return
+        username, password = info
+        if '.' in username or '*' in username:
+            print("Characters '.' and '*' not allowed in usernames. Please try again!")
+            return
+        if len(username) > MAX_LENGTH or len(password) > MAX_LENGTH:
+            print("Username or password is too long. Please try again!")
+            return
+        write_queue.put(struct.pack('>I', opcode) + struct.pack('>I', len(username)) + username.encode('utf-8') + struct.pack('>I', len(password)) + password.encode('utf-8'))
 
 class Client(): 
     def __init__(self): 
