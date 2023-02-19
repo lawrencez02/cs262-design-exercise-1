@@ -6,6 +6,7 @@ import struct
 import threading
 import sys 
 import os
+import time
 from constants import *
 
 
@@ -111,14 +112,20 @@ class Client():
                     print(sentfrom, ": ", msg, sep="")
                 else:
                     print(self._recv_n_args(1)[0])
+                    if statuscode == DELETE_CONFIRM or statuscode == LOGOUT_CONFIRM:
+                        os._exit(1)
 
 
 if __name__ == '__main__':
     # instantiate client and run separate threads for command-line input, sending messages, and receiving messages
-    client = Client() 
-    threading.Thread(target=client.receive).start()
-    threading.Thread(target=UserInput().cmdloop).start()
-    threading.Thread(target=client.send).start()
-    
+    try:
+        client = Client() 
+        threading.Thread(target=client.receive).start()
+        threading.Thread(target=UserInput().cmdloop).start()
+        threading.Thread(target=client.send).start()
+        while True: time.sleep(100)
+    except KeyboardInterrupt:
+        print("Caught keyboard interrupt exception, client exiting")
+        os._exit(1)
     
    
