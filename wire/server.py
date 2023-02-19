@@ -36,63 +36,40 @@ class Server():
             data.extend(packet) 
         return data
 
+    # Pack opcode and message and send through specified socket
+    def _send_msg(self, sock, opcode, msg):
+        sock.sendall(struct.pack('>I', opcode) + struct.pack('>I', len(msg)) + msg.encode("utf-8"))
+
+    # Receives n arguments from wire, packaged as len(arg1) + arg1 + len(arg2) + arg2 + ...
+    def _recv_n_args(self, sock, n):
+        args = []
+        for _ in range(n):
+            arg_len = struct.unpack('>I', self._recvall(sock, 4))[0]
+            args.append(self._recvall(sock, arg_len).decode("utf-8", "strict"))
+        return args
+
+    # Accept connection from a client
     def accept_wrapper(self):
         conn, addr = self.sock.accept() 
         print(f"Accepted connection from {addr}")
         conn.setblocking(False)
-        data = types.SimpleNamespace(addr=addr, inb=b"", outb=b"", username="")
-        events = selectors.EVENT_READ | selectors.EVENT_WRITE
-        self.sel.register(conn, events, data=data)
+        data = types.SimpleNamespace(addr=addr, outb=b"", username="")
+        self.sel.register(conn, selectors.EVENT_READ | selectors.EVENT_WRITE, data=data)
 
     def service_connection(self, key, mask):
         sock, data = key.fileobj, key.data
+        # check if client socket has closed, unregister connection and close corresponding socket
         if mask & selectors.EVENT_READ:
             raw_opcode = self._recvall(sock, 4)
-            # if client socket has closed, unregister connection and close corresponding server socket
-            if raw_opcode is None: 
+            if not raw_opcode: 
                 if data.username != "": 
                     del active_conns[data.username]
                 self.sel.unregister(sock)
                 sock.close() 
-            else: 
-                opcode = struct.unpack('>I', raw_opcode)[0]
-                if opcode == LOGIN: # client socket is trying to login with a username/password
-                    username_len = struct.unpack('>I', self._recvall(sock, 4))[0]
-                    username = self._recvall(sock, username_len).decode("utf-8", "strict")
-                    password_len = struct.unpack('>I', self._recvall(sock, 4))[0]
-                    password = self._recvall(sock, password_len).decode("utf-8", "strict")
-                    if username in users and users[username] == password: 
-                        # fill out active_conns and queue
-                        data.username = username
-                        active_conns[username] = (sock, data)
-                        print(f"{username} logged in successfully")
-                    else: 
-                        print(f"Unsuccessful login attempt by {username}")
-                        msg = "Incorrect username or password. Please try again!"
-                        sock.sendall(struct.pack('>I', LOGIN_ERROR) + struct.pack('>I', len(msg)) + msg.encode("utf-8"))
-                elif opcode == SEND: # client socket is trying to send a message
-                    sendto_len = struct.unpack('>I', self._recvall(sock, 4))[0] 
-                    sendto = self._recvall(sock, sendto_len).decode("utf-8", "strict")
-                    msg_len = struct.unpack('>I', self._recvall(sock, 4))[0]
-                    msg = self._recvall(sock, msg_len).decode("utf-8", "strict")
-                    if sendto not in active_conns:
-                        if sendto not in users: 
-                            msg = "Recipient user does not exist. Please try again!"
-                            sock.sendall(struct.pack('>I', SEND_ERROR) + struct.pack('>I', len(msg)) + msg.encode("utf-8"))
-                        else:
-                            if sendto not in messages_queue: 
-                                messages_queue[sendto] = queue.Queue()
-                            messages_queue[sendto].put((data.username, msg))
-                    else: 
-                        active_conns[sendto][1].outb += struct.pack('>I', RECEIVE) + struct.pack('>I', len(data.username)) + data.username.encode('utf-8') + struct.pack('>I', len(msg)) + msg.encode('utf-8')
-                elif opcode == FIND: # client socket trying to find users 
-                    exp_len = struct.unpack('>I', self._recvall(sock, 4))[0]
-                    exp = self._recvall(sock, exp_len).decode("utf-8", "strict")
-                    exp_str = '.*' + exp + '.*'
-                    regex = re.compile(exp_str)
-                    result = ', '.join(list(filter(regex.match, users.keys())))
-                    sock.sendall(struct.pack('>I', FIND_RESULT) + struct.pack('>I', len(result)) + result.encode("utf-8"))
+                return
+            opcode = struct.unpack('>I', raw_opcode)[0]
 
+        # write to socket everything in message queue and data.outb first
         if mask & selectors.EVENT_WRITE and data.username != '': 
             if data.username in messages_queue and not messages_queue[data.username].empty(): 
                 while not messages_queue[data.username].empty(): 
@@ -102,6 +79,40 @@ class Server():
             if data.outb: 
                 sock.sendall(data.outb)
                 data.outb = b""
+
+        if mask & selectors.EVENT_READ:
+            if (data.username and opcode in [LOGIN]) or (not data.username and opcode in [SEND]):
+                self._send_msg(sock, PRIVILEGE_ERROR, "You are in the wrong logged in/out state for this command. Please try again!")
+                self._recv_n_args(sock, 2)
+                return
+
+            if opcode == LOGIN: # client socket is trying to login with a username/password
+                username, password = self._recv_n_args(sock, 2)
+                if username in users and users[username] == password: 
+                    # fill out active_conns and queue
+                    data.username = username
+                    active_conns[username] = (sock, data)
+                    print(f"{username} logged in successfully")
+                    self._send_msg(sock, LOGIN_CONFIRM, f"Logged in as {username}!")
+                else: 
+                    print(f"Unsuccessful login attempt by {username}")
+                    self._send_msg(sock, LOGIN_ERROR, "Incorrect username or password. Please try again!")
+            elif opcode == SEND: # client socket is trying to send a message
+                sendto, msg = self._recv_n_args(sock, 2)
+                if sendto not in active_conns:
+                    if sendto not in users: 
+                        self._send_msg(sock, SEND_ERROR, "Recipient user does not exist. Please try again!")
+                    else:
+                        if sendto not in messages_queue: 
+                            messages_queue[sendto] = queue.Queue()
+                        messages_queue[sendto].put((data.username, msg))
+                else: 
+                    active_conns[sendto][1].outb += struct.pack('>I', RECEIVE) + struct.pack('>I', len(data.username)) + data.username.encode('utf-8') + struct.pack('>I', len(msg)) + msg.encode('utf-8')
+            elif opcode == FIND: # client socket trying to find users 
+                exp = self._recv_n_args(sock, 1)[0]
+                regex = re.compile(exp)
+                result = "Users: " + ', '.join(list(filter(regex.match, users.keys())))
+                self._send_msg(sock, FIND_RESULT, result)
     
     # main loop that runs server
     def run(self): 

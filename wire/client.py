@@ -62,12 +62,19 @@ class Client():
             data.extend(packet) 
         return data 
 
+    # Receives n arguments from wire, packaged as len(arg1) + arg1 + len(arg2) + arg2 + ...
+    def _recv_n_args(self, n):
+        args = []
+        for _ in range(n):
+            arg_len = struct.unpack('>I', self._recvall(4))[0]
+            args.append(self._recvall(arg_len).decode("utf-8", "strict"))
+        return args
+
     def send(self): 
         sel_write.register(self.sock, selectors.EVENT_WRITE)
         while True: 
             for key, mask in sel_write.select(timeout=None): 
-                outb = write_queue.get()
-                self.sock.sendall(outb)
+                self.sock.sendall(write_queue.get())
     
     def receive(self): 
         sel_read.register(self.sock, selectors.EVENT_READ)
@@ -76,15 +83,10 @@ class Client():
                 raw_statuscode = self._recvall(4)
                 statuscode = struct.unpack('>I', raw_statuscode)[0]
                 if statuscode == RECEIVE:
-                    sentfrom_len = struct.unpack('>I', self._recvall(4))[0]
-                    sentfrom = self._recvall(sentfrom_len).decode("utf-8", "strict")
-                    msg_len = struct.unpack('>I', self._recvall(4))[0]
-                    msg = self._recvall(msg_len).decode("utf-8", "strict")
+                    sentfrom, msg = self._recv_n_args(2)
                     print(sentfrom, ": ", msg, sep="")
-                elif statuscode in [LOGIN_ERROR, FIND_RESULT, SEND_ERROR]:
-                    msg_len = struct.unpack('>I', self._recvall(4))[0]
-                    msg = self._recvall(msg_len).decode("utf-8", "strict")
-                    print(msg)
+                else:
+                    print(self._recv_n_args(1)[0])
 
 
 if __name__ == '__main__':
