@@ -14,27 +14,37 @@ class ChatBotStub(object):
         Args:
             channel: A grpc.Channel.
         """
-        self.send = channel.stream_unary(
+        self.send = channel.unary_unary(
                 '/ChatBot/send',
                 request_serializer=current__pb2.Message.SerializeToString,
-                response_deserializer=current__pb2.Empty.FromString,
+                response_deserializer=current__pb2.Status.FromString,
                 )
         self.receive = channel.unary_stream(
                 '/ChatBot/receive',
-                request_serializer=current__pb2.Empty.SerializeToString,
+                request_serializer=current__pb2.User.SerializeToString,
                 response_deserializer=current__pb2.Message.FromString,
                 )
         self.login = channel.unary_unary(
                 '/ChatBot/login',
                 request_serializer=current__pb2.User.SerializeToString,
-                response_deserializer=current__pb2.Empty.FromString,
+                response_deserializer=current__pb2.Status.FromString,
+                )
+        self.register = channel.unary_unary(
+                '/ChatBot/register',
+                request_serializer=current__pb2.User.SerializeToString,
+                response_deserializer=current__pb2.Status.FromString,
+                )
+        self.delete = channel.unary_unary(
+                '/ChatBot/delete',
+                request_serializer=current__pb2.Empty.SerializeToString,
+                response_deserializer=current__pb2.Status.FromString,
                 )
 
 
 class ChatBotServicer(object):
     """Missing associated documentation comment in .proto file."""
 
-    def send(self, request_iterator, context):
+    def send(self, request, context):
         """Missing associated documentation comment in .proto file."""
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
@@ -52,23 +62,45 @@ class ChatBotServicer(object):
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
+    def register(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def delete(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
 
 def add_ChatBotServicer_to_server(servicer, server):
     rpc_method_handlers = {
-            'send': grpc.stream_unary_rpc_method_handler(
+            'send': grpc.unary_unary_rpc_method_handler(
                     servicer.send,
                     request_deserializer=current__pb2.Message.FromString,
-                    response_serializer=current__pb2.Empty.SerializeToString,
+                    response_serializer=current__pb2.Status.SerializeToString,
             ),
             'receive': grpc.unary_stream_rpc_method_handler(
                     servicer.receive,
-                    request_deserializer=current__pb2.Empty.FromString,
+                    request_deserializer=current__pb2.User.FromString,
                     response_serializer=current__pb2.Message.SerializeToString,
             ),
             'login': grpc.unary_unary_rpc_method_handler(
                     servicer.login,
                     request_deserializer=current__pb2.User.FromString,
-                    response_serializer=current__pb2.Empty.SerializeToString,
+                    response_serializer=current__pb2.Status.SerializeToString,
+            ),
+            'register': grpc.unary_unary_rpc_method_handler(
+                    servicer.register,
+                    request_deserializer=current__pb2.User.FromString,
+                    response_serializer=current__pb2.Status.SerializeToString,
+            ),
+            'delete': grpc.unary_unary_rpc_method_handler(
+                    servicer.delete,
+                    request_deserializer=current__pb2.Empty.FromString,
+                    response_serializer=current__pb2.Status.SerializeToString,
             ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
@@ -81,7 +113,7 @@ class ChatBot(object):
     """Missing associated documentation comment in .proto file."""
 
     @staticmethod
-    def send(request_iterator,
+    def send(request,
             target,
             options=(),
             channel_credentials=None,
@@ -91,9 +123,9 @@ class ChatBot(object):
             wait_for_ready=None,
             timeout=None,
             metadata=None):
-        return grpc.experimental.stream_unary(request_iterator, target, '/ChatBot/send',
+        return grpc.experimental.unary_unary(request, target, '/ChatBot/send',
             current__pb2.Message.SerializeToString,
-            current__pb2.Empty.FromString,
+            current__pb2.Status.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
 
@@ -109,7 +141,7 @@ class ChatBot(object):
             timeout=None,
             metadata=None):
         return grpc.experimental.unary_stream(request, target, '/ChatBot/receive',
-            current__pb2.Empty.SerializeToString,
+            current__pb2.User.SerializeToString,
             current__pb2.Message.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
@@ -127,6 +159,40 @@ class ChatBot(object):
             metadata=None):
         return grpc.experimental.unary_unary(request, target, '/ChatBot/login',
             current__pb2.User.SerializeToString,
-            current__pb2.Empty.FromString,
+            current__pb2.Status.FromString,
+            options, channel_credentials,
+            insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
+
+    @staticmethod
+    def register(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(request, target, '/ChatBot/register',
+            current__pb2.User.SerializeToString,
+            current__pb2.Status.FromString,
+            options, channel_credentials,
+            insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
+
+    @staticmethod
+    def delete(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(request, target, '/ChatBot/delete',
+            current__pb2.Empty.SerializeToString,
+            current__pb2.Status.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
