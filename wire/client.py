@@ -57,8 +57,8 @@ class UserInput(Cmd):
             print(f"Incorrect arguments: correct form is {'login' if opcode == LOGIN else 'register'} [username] [password]. Please try again!")
             return
         username, password = info
-        if '.' in username or '*' in username:
-            print("Characters '.' and '*' not allowed in usernames. Please try again!")
+        if any(c in ".+*?^$()[]{}|\\" for c in username):
+            print("Special characters not allowed in usernames. Please try again!")
             return
         if len(username) > MAX_LENGTH or len(password) > MAX_LENGTH:
             print("Username or password is too long. Please try again!")
