@@ -2,10 +2,11 @@ syntax = "proto3";
 
 service ChatBot {
     rpc send (Message) returns (Status) {}
-    rpc receive (User) returns (stream Message) {}
+    rpc receive (Username) returns (stream Message) {}
     rpc login (User) returns (Status) {}
     rpc register (User) returns (Status) {}
-    rpc delete (Empty) returns (Status) {}
+    rpc delete (Username) returns (Status) {}
+    rpc find (Username) returns (stream Username) {}
 }
 
 message Message {
@@ -15,8 +16,8 @@ message Message {
 }
 
 message Status {
-    int32 status = 1;
-    string err = 2;
+    int32 code = 1;
+    string message = 2;
 }
 
 message Empty {}
@@ -24,4 +25,8 @@ message Empty {}
 message User {
     string username = 1;
     string password = 2;
+}
+
+message Username {
+    string username = 1;
 }

@@ -21,7 +21,7 @@ class ChatBotStub(object):
                 )
         self.receive = channel.unary_stream(
                 '/ChatBot/receive',
-                request_serializer=current__pb2.User.SerializeToString,
+                request_serializer=current__pb2.Username.SerializeToString,
                 response_deserializer=current__pb2.Message.FromString,
                 )
         self.login = channel.unary_unary(
@@ -36,8 +36,13 @@ class ChatBotStub(object):
                 )
         self.delete = channel.unary_unary(
                 '/ChatBot/delete',
-                request_serializer=current__pb2.Empty.SerializeToString,
+                request_serializer=current__pb2.Username.SerializeToString,
                 response_deserializer=current__pb2.Status.FromString,
+                )
+        self.find = channel.unary_stream(
+                '/ChatBot/find',
+                request_serializer=current__pb2.Username.SerializeToString,
+                response_deserializer=current__pb2.Username.FromString,
                 )
 
 
@@ -74,6 +79,12 @@ class ChatBotServicer(object):
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
+    def find(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
 
 def add_ChatBotServicer_to_server(servicer, server):
     rpc_method_handlers = {
@@ -84,7 +95,7 @@ def add_ChatBotServicer_to_server(servicer, server):
             ),
             'receive': grpc.unary_stream_rpc_method_handler(
                     servicer.receive,
-                    request_deserializer=current__pb2.User.FromString,
+                    request_deserializer=current__pb2.Username.FromString,
                     response_serializer=current__pb2.Message.SerializeToString,
             ),
             'login': grpc.unary_unary_rpc_method_handler(
@@ -99,8 +110,13 @@ def add_ChatBotServicer_to_server(servicer, server):
             ),
             'delete': grpc.unary_unary_rpc_method_handler(
                     servicer.delete,
-                    request_deserializer=current__pb2.Empty.FromString,
+                    request_deserializer=current__pb2.Username.FromString,
                     response_serializer=current__pb2.Status.SerializeToString,
+            ),
+            'find': grpc.unary_stream_rpc_method_handler(
+                    servicer.find,
+                    request_deserializer=current__pb2.Username.FromString,
+                    response_serializer=current__pb2.Username.SerializeToString,
             ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
@@ -141,7 +157,7 @@ class ChatBot(object):
             timeout=None,
             metadata=None):
         return grpc.experimental.unary_stream(request, target, '/ChatBot/receive',
-            current__pb2.User.SerializeToString,
+            current__pb2.Username.SerializeToString,
             current__pb2.Message.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
@@ -192,7 +208,24 @@ class ChatBot(object):
             timeout=None,
             metadata=None):
         return grpc.experimental.unary_unary(request, target, '/ChatBot/delete',
-            current__pb2.Empty.SerializeToString,
+            current__pb2.Username.SerializeToString,
             current__pb2.Status.FromString,
+            options, channel_credentials,
+            insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
+
+    @staticmethod
+    def find(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_stream(request, target, '/ChatBot/find',
+            current__pb2.Username.SerializeToString,
+            current__pb2.Username.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
