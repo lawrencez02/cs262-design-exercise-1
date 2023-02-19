@@ -6,6 +6,7 @@ import struct
 import threading
 import sys 
 import os
+import time
 from constants import *
 
 
@@ -56,8 +57,8 @@ class UserInput(Cmd):
             print(f"Incorrect arguments: correct form is {'login' if opcode == LOGIN else 'register'} [username] [password]. Please try again!")
             return
         username, password = info
-        if '.' in username or '*' in username:
-            print("Characters '.' and '*' not allowed in usernames. Please try again!")
+        if any(c in ".+*?^$()[]{}|\\" for c in username):
+            print("Special characters not allowed in usernames. Please try again!")
             return
         if len(username) > MAX_LENGTH or len(password) > MAX_LENGTH:
             print("Username or password is too long. Please try again!")
@@ -100,8 +101,6 @@ class Client():
             for key, mask in sel_read.select(timeout=None): 
                 raw_statuscode = self._recvall(4)
                 if not raw_statuscode:
-                    sel_read.unregister(self.sock)
-                    sel_write.unregister(self.sock)
                     self.sock.close() 
                     print("Server down - client exiting")
                     os._exit(1)
@@ -111,14 +110,21 @@ class Client():
                     print(sentfrom, ": ", msg, sep="")
                 else:
                     print(self._recv_n_args(1)[0])
+                    if statuscode == DELETE_CONFIRM or statuscode == LOGOUT_CONFIRM:
+                        self.sock.close() 
+                        os._exit(1)
 
 
 if __name__ == '__main__':
     # instantiate client and run separate threads for command-line input, sending messages, and receiving messages
-    client = Client() 
-    threading.Thread(target=client.receive).start()
-    threading.Thread(target=UserInput().cmdloop).start()
-    threading.Thread(target=client.send).start()
-    
+    try:
+        client = Client() 
+        threading.Thread(target=client.receive).start()
+        threading.Thread(target=UserInput().cmdloop).start()
+        threading.Thread(target=client.send).start()
+        while True: time.sleep(100)
+    except KeyboardInterrupt:
+        print("Caught keyboard interrupt exception, client exiting")
+        os._exit(1)
     
    
