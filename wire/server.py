@@ -85,7 +85,7 @@ class Server():
             if opcode == LOGIN or opcode == REGISTER: # client socket is trying to login or register with a username/password
                 username, password = self._recv_n_args(sock, 2)
                 if data.username:
-                    self._send_msg(sock, PRIVILEGE_ERROR, "You need to be not signed in to log in or register as a user. Please try again!")
+                    self._send_msg(sock, PRIVILEGE_ERROR, "You need to be logged out. Please try again!")
                     return
                 if opcode == REGISTER:
                     if username in users:
@@ -101,14 +101,20 @@ class Server():
                 else: 
                     print(f"Unsuccessful login attempt by {username}")
                     self._send_msg(sock, LOGIN_ERROR, "Incorrect username or password. Please try again!")
-            elif opcode == LOGOUT:
+            elif opcode == LOGOUT or opcode == DELETE:
                 if not data.username:
-                    self._send_msg(sock, PRIVILEGE_ERROR, "You need to be logged in to log out. Please try again!")
+                    self._send_msg(sock, PRIVILEGE_ERROR, "You need to be logged in. Please try again!")
                     return
                 active_conns.pop(data.username, None)
-                print(f"{data.username} logged out successfully")
+                if opcode == LOGOUT:
+                    self._send_msg(sock, LOGOUT_CONFIRM, "Logged out successfully!")
+                    print(f"{data.username} logged out successfully")
+                elif opcode == DELETE:
+                    messages_queue.pop(data.username, None)
+                    users.pop(data.username, None)
+                    self._send_msg(sock, DELETE_CONFIRM, "Deleted account successfully!")
+                    print(f"{data.username} deleted successfully")
                 data.username = ''
-                self._send_msg(sock, LOGOUT_CONFIRM, "Logged out successfully!")
             elif opcode == SEND: # client socket is trying to send a message
                 sendto, msg = self._recv_n_args(sock, 2)
                 if not data.username:
