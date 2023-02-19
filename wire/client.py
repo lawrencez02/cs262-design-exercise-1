@@ -101,8 +101,6 @@ class Client():
             for key, mask in sel_read.select(timeout=None): 
                 raw_statuscode = self._recvall(4)
                 if not raw_statuscode:
-                    sel_read.unregister(self.sock)
-                    sel_write.unregister(self.sock)
                     self.sock.close() 
                     print("Server down - client exiting")
                     os._exit(1)
@@ -113,6 +111,7 @@ class Client():
                 else:
                     print(self._recv_n_args(1)[0])
                     if statuscode == DELETE_CONFIRM or statuscode == LOGOUT_CONFIRM:
+                        self.sock.close() 
                         os._exit(1)
 
 
