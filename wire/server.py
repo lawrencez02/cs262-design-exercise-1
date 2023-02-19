@@ -94,6 +94,9 @@ class Server():
                     users[username] = password
                 if username in users and users[username] == password: 
                     # fill out active_conns and queue
+                    if username in active_conns:
+                        self._send_msg(sock, LOGIN_ERROR, "User already logged in in a different location. Please try again!")
+                        return
                     data.username = username
                     active_conns[username] = (sock, data)
                     print(f"{username} logged in successfully")

@@ -5,11 +5,11 @@ MAX_LENGTH = 2 ** 10 # max argument length (e.g., username, password, message, e
 
 # OP CODES (what client sends to server)
 LOGIN = 0
-REGISTER = 2
-LOGOUT = 4
-DELETE = 6
-SEND = 8
-FIND = 16
+REGISTER = 4
+LOGOUT = 8
+DELETE = 12
+SEND = 16
+FIND = 20
 
 # STATUS/RESPONSE CODES (what server sends to client)
 LOGIN_CONFIRM = LOGIN
