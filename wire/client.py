@@ -5,6 +5,7 @@ import selectors
 import struct 
 import threading
 import sys 
+import os
 from constants import *
 
 
@@ -98,6 +99,12 @@ class Client():
         while True: 
             for key, mask in sel_read.select(timeout=None): 
                 raw_statuscode = self._recvall(4)
+                if not raw_statuscode:
+                    sel_read.unregister(self.sock)
+                    sel_write.unregister(self.sock)
+                    self.sock.close() 
+                    print("Server down - client exiting")
+                    os._exit(1)
                 statuscode = struct.unpack('>I', raw_statuscode)[0]
                 if statuscode == RECEIVE:
                     sentfrom, msg = self._recv_n_args(2)
