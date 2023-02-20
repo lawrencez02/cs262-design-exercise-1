@@ -93,19 +93,12 @@ class Server():
                 data.outb = b""
 
         if mask & selectors.EVENT_READ: # if the server can read from the socket
-            if opcode == LOGIN or opcode == REGISTER: # client socket is trying to login or register
+            if opcode == LOGIN: # client socket is trying to login
                 username, password = self._recv_n_args(sock, 2) # receive username and password from the wire
-                # ensure only logged out clients can login or register
+                # ensure only logged out clients can login
                 if data.username:
-                    self._send_msg(sock, PRIVILEGE_ERROR, "You need to be logged out. Please try again!")
+                    self._send_msg(sock, PRIVILEGE_ERROR, "You need to be logged out to login. Please try again!")
                     return
-                if opcode == REGISTER:
-                    # ensure clients must register unique usernames
-                    if username in users:
-                        self._send_msg(sock, REGISTER_ERROR, "Username already exists. Please try again!")
-                        return
-                    # add registration's username and passwords to dictionary of users
-                    users[username] = password
                 # ensure login is allowed only if username and password are verified
                 if username in users and users[username] == password: 
                     # only allow an account to be logged in from one client/socket at a time
@@ -117,10 +110,24 @@ class Server():
                     active_conns[username] = (sock, data)
                     print(f"{username} logged in successfully")
                     # send appropriate login or register confirmation over the wire
-                    self._send_msg(sock, LOGIN_CONFIRM if opcode == LOGIN else REGISTER_CONFIRM, f"Logged in as {username}!")
+                    self._send_msg(sock, LOGIN_CONFIRM, f"Logged in as {username}!")
                 else: 
                     print(f"Unsuccessful login attempt by {username}")
                     self._send_msg(sock, LOGIN_ERROR, "Incorrect username or password. Please try again!")
+            elif opcode == REGISTER: # client socket is trying to register
+                username, password = self._recv_n_args(sock, 2) # receive username and password from the wire
+                # ensure only logged out clients can register
+                if data.username:
+                    self._send_msg(sock, PRIVILEGE_ERROR, "You need to be logged out to register. Please try again!")
+                    return
+                 # ensure clients must register unique usernames
+                if username in users:
+                    self._send_msg(sock, REGISTER_ERROR, "Username already exists. Please try again!")
+                    return
+                # add registration's username and passwords to dictionary of users
+                users[username] = password
+                print(f"{username} successfully registered")
+                self._send_msg(sock, REGISTER_CONFIRM, f"{username} successfully registered, please log in!")
             elif opcode == LOGOUT or opcode == DELETE: # client socket is trying to logout or delete account
                 # ensure only logged in clients can logout or delete their account
                 if not data.username:
