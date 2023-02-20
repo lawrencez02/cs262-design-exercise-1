@@ -21,7 +21,7 @@ For both the wire and gRPC version, the client behavior is the same. There are 6
 
 Therefore, a typical workflow in the chat application might look like: "register User1 Password1", "login User1 Password1", some "send" or "find" commands, and finally a "logout" or "delete."
 
-Note that to close the chatbot clients or the server, you can press Control-C. Finally, you can also type "help" or "?" into the client command line to receive further help or clarification on any of the above commands. Note also that the command-line input will give an error message stating a command is of unknown syntax if it does not belong to one of the above forms.
+Note that to close the chatbot clients or the server, you can press Control-C. Finally, you can also type "help" or "?" into the client command line to receive further help or clarification on any of the above commands. Note also that the command-line input will give an error message stating a command is of unknown syntax if it does not belong to one of the above forms (matching lowercase and all).
 
 # Engineering Notebook
 For more documentation and details on the chatbot functions, and to see more technical discussion on the design of our wire protocol and the gRPC version, please see the following [engineering notebook](https://docs.google.com/document/d/1_woX4jMeICmyr4oACuNrLt2HmFSQO7RKk35GuqDuTLs/edit?usp=sharing).
