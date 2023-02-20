@@ -13,7 +13,7 @@ _sym_db = _symbol_database.Default()
 
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\rcurrent.proto\"6\n\x07Message\x12\x0f\n\x07message\x18\x01 \x01(\t\x12\r\n\x05\x66rom_\x18\x02 \x01(\t\x12\x0b\n\x03to_\x18\x03 \x01(\t\"\'\n\x06Status\x12\x0c\n\x04\x63ode\x18\x01 \x01(\x05\x12\x0f\n\x07message\x18\x02 \x01(\t\"\x07\n\x05\x45mpty\"*\n\x04User\x12\x10\n\x08username\x18\x01 \x01(\t\x12\x10\n\x08password\x18\x02 \x01(\t\"\x1c\n\x08Username\x12\x10\n\x08username\x18\x01 \x01(\t2\xc5\x01\n\x07\x43hatBot\x12\x1b\n\x04send\x12\x08.Message\x1a\x07.Status\"\x00\x12\"\n\x07receive\x12\t.Username\x1a\x08.Message\"\x00\x30\x01\x12\x19\n\x05login\x12\x05.User\x1a\x07.Status\"\x00\x12\x1c\n\x08register\x12\x05.User\x1a\x07.Status\"\x00\x12\x1e\n\x06\x64\x65lete\x12\t.Username\x1a\x07.Status\"\x00\x12 \n\x04\x66ind\x12\t.Username\x1a\t.Username\"\x00\x30\x01\x62\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\rcurrent.proto\"6\n\x07Message\x12\x0f\n\x07message\x18\x01 \x01(\t\x12\r\n\x05\x66rom_\x18\x02 \x01(\t\x12\x0b\n\x03to_\x18\x03 \x01(\t\"\'\n\x06Status\x12\x0c\n\x04\x63ode\x18\x01 \x01(\x05\x12\x0f\n\x07message\x18\x02 \x01(\t\"*\n\x04User\x12\x10\n\x08username\x18\x01 \x01(\t\x12\x10\n\x08password\x18\x02 \x01(\t\"\x1c\n\x08Username\x12\x10\n\x08username\x18\x01 \x01(\t2\xc5\x01\n\x07\x43hatBot\x12\x1b\n\x04send\x12\x08.Message\x1a\x07.Status\"\x00\x12\"\n\x07receive\x12\t.Username\x1a\x08.Message\"\x00\x30\x01\x12\x19\n\x05login\x12\x05.User\x1a\x07.Status\"\x00\x12\x1c\n\x08register\x12\x05.User\x1a\x07.Status\"\x00\x12\x1e\n\x06\x64\x65lete\x12\t.Username\x1a\x07.Status\"\x00\x12 \n\x04\x66ind\x12\t.Username\x1a\t.Username\"\x00\x30\x01\x62\x06proto3')
 
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, globals())
 _builder.BuildTopDescriptorsAndMessages(DESCRIPTOR, 'current_pb2', globals())
@@ -24,12 +24,10 @@ if _descriptor._USE_C_DESCRIPTORS == False:
   _MESSAGE._serialized_end=71
   _STATUS._serialized_start=73
   _STATUS._serialized_end=112
-  _EMPTY._serialized_start=114
-  _EMPTY._serialized_end=121
-  _USER._serialized_start=123
-  _USER._serialized_end=165
-  _USERNAME._serialized_start=167
-  _USERNAME._serialized_end=195
-  _CHATBOT._serialized_start=198
-  _CHATBOT._serialized_end=395
+  _USER._serialized_start=114
+  _USER._serialized_end=156
+  _USERNAME._serialized_start=158
+  _USERNAME._serialized_end=186
+  _CHATBOT._serialized_start=189
+  _CHATBOT._serialized_end=386
 # @@protoc_insertion_point(module_scope)

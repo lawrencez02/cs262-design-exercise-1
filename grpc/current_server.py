@@ -38,6 +38,8 @@ class ChatBot(current_pb2_grpc.ChatBotServicer):
             return current_pb2.Status(code=1, message=f"Logged in as {request.username}!")    
 
     def delete(self, request, context): 
+        # only make it possible to delete account if the account exists in users and messages_dict 
+        # if it does, remove that username and its associated values from both users and message_dict
         if request.username in users and request.username in messages_dict:
             del users[request.username]
             del messages_dict[request.username]
@@ -47,26 +49,39 @@ class ChatBot(current_pb2_grpc.ChatBotServicer):
 
     def send(self, request, context): 
         print("Got request " + str(request))
+        # check to make sure request.from_ is a valid username
         if request.from_ not in users:
             return current_pb2.Status(code=-1, message="You need to be logged in to send a message. Please try again!") 
+        # check to make sure request.to_ is a valid user
+        # if yes, put the message in messages_dict[request.to_]
         if request.to_ in messages_dict: 
             messages_dict[request.to_].put(request)
             return current_pb2.Status(code=1, message="")
+        # if request.to_ isn't a valid user, send appropriate Status 
         else: 
             return current_pb2.Status(code=-1, message="Recipient user does not exist. Please try again!")
 
     def receive(self, request, context): 
         username = request.username
+        # to receive messages, use a while True loop to constantly get messages from messages_dict[username] 
         while True: 
+            # take a message from messages_dict[username] if possible
             request = messages_dict[username].get()
+            # this line of code makes sure the channel is still active 
+            # if the channel is no longer active, put the message you just got from messages_dict[username] queue back and break out of the while True loop
             if not context.is_active(): 
                 messages_dict[username].put(request)
                 break
+            # package the message into a Message object
             message = current_pb2.Message(message=request.message, from_=request.from_, to_=request.to_)
+            # yield back to client (yield is how to return a stream in gRPC)
             yield message
     
     def find(self, request, context): 
+        # when the user calls find, it packages the expression they're looking for into a Username object: Username(username=expression)
+        # get the expression the user is looking for
         exp = request.username 
+        # match using re module and return as a stream 
         regex = re.compile(exp)
         result = list(filter(regex.match, users.keys()))
         for res in result: 
@@ -75,13 +90,14 @@ class ChatBot(current_pb2_grpc.ChatBotServicer):
 
         
 def server(): 
-    server = grpc.server(futures.ThreadPoolExecutor(max_workers=20))
+    server = grpc.server(futures.ThreadPoolExecutor(max_workers=40))
     current_pb2_grpc.add_ChatBotServicer_to_server(ChatBot(), server)
     server.add_insecure_port('[::]:50051')
     print("gRPC starting")
     server.start()
     try: 
         server.wait_for_termination()
+        # sleep to make sure main loop doesn't exit before catching 
         while True: time.sleep(100)
     except KeyboardInterrupt: 
         print("Caught keyboard interruption exception, server exiting.")

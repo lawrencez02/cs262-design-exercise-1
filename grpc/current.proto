@@ -20,8 +20,6 @@ message Status {
     string message = 2;
 }
 
-message Empty {}
-
 message User {
     string username = 1;
     string password = 2;

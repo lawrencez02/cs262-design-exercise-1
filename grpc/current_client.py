@@ -126,3 +126,6 @@ if __name__ == '__main__':
     except KeyboardInterrupt: 
         print("Caught keyboard interrupt exception, client exiting")
         os._exit(1)
+    except: 
+        print("Server shutting down.")
+        os._exit(1)
