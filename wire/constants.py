@@ -1,6 +1,6 @@
 # General constants
 PORT = 12984
-MAX_LENGTH = 2 ** 10 # max argument length (e.g., username, password, message, etc.)
+MAX_LENGTH = 2 ** 10 # max argument length in wire protocol (e.g., username, password, message, etc.)
 
 
 # OP CODES (what client sends to server)

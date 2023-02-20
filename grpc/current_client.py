@@ -8,7 +8,7 @@ import os
 
 # Command line interface: constantly listens for and handles command line input from users
 class UserInput(Cmd): 
-    intro = 'Welcome! Type help or ? to list commands. To see what a particular command does and how to invoke it, type help <command>. \n'
+    intro = "Welcome! Type help or ? to list commands. To see what a particular command does and how to invoke it, type help <command>. \n"
 
     def __init__(self, client): 
         super().__init__()
@@ -56,7 +56,7 @@ class UserInput(Cmd):
         print(status.message)
 
     def do_send(self, info):
-        "Description: This command allows users to send a message. \nSynopsis: send [username] [password] \n"
+        "Description: This command allows users to send a message. \nSynopsis: send [username] [message] \n"
         # split command line arguments into send_to and message
         info = info.split(' ', 1)
         if len(info) != 2:
