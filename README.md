@@ -6,12 +6,12 @@ If you have trouble starting up the client or the server, be sure to disable you
 
 # How to Use
 For both the wire and gRPC version, the client behavior is the same. There are 6 available application-related commands for the client to use: register, login, logout, delete, send, and find. 
-register [username] [password] allows users to create an account. register must be run from a non-logged in client.
-login [username] [password] allows users to login once they have an account. login must be run from a non-logged in client.
-logout takes no arguments, and allows users to logout and subsequently also exits the chatbot. logout must be run from a logged-in client.
-delete takes no arguments, and allows users to delete their account and subsequently exit the chatbot. delete must be run from a logged-in client.
-send [username] [message] allows users to send a message to a specified user. send must be run from a logged-in client.
-find [regex] allows users to find users on the chatbot by a regex expression.
+* register [username] [password] allows users to create an account. register must be run from a non-logged in client.
+* login [username] [password] allows users to login once they have an account. login must be run from a non-logged in client.
+* logout takes no arguments, and allows users to logout and subsequently also exits the chatbot. logout must be run from a logged-in client.
+* delete takes no arguments, and allows users to delete their account and subsequently exit the chatbot. delete must be run from a logged-in client.
+* send [username] [message] allows users to send a message to a specified user. send must be run from a logged-in client.
+* find [regex] allows users to find users on the chatbot by a regex expression.
 
 Therefore, a typical workflow in the chat application might look like: "register User1 Password1", "login User1 Password1", some "send" or "find" commands, and finally a "logout" or "delete."
 
