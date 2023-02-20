@@ -88,6 +88,7 @@ class UserInput(Cmd):
         os._exit(1)
 
     def do_find(self, exp): 
+        "Description: This command allows users to find users by a regex expression. \nSynopsis: find [regex]\n"
         results = self.client.stub.find(current_pb2.Username(username=exp))
         for result in results: 
             print(result.username)

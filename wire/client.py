@@ -22,25 +22,33 @@ host, port = sys.argv[1], int(sys.argv[2])
 
 # takes and parses command-line user input for all different commands
 class UserInput(Cmd): 
+    intro = 'Welcome! Type help or ? to list commands. To see what a particular command does and how to invoke it, type help <command>. \n'
+
     def do_login(self, login_info): 
+        "Description: This command allows users to login once they have an account. \nSynopsis: login [username] [password] \n"
         self._register_or_login(login_info, LOGIN)
 
     def do_register(self, register_info):
+        "Description: This command allows users to create an account. \nSynopsis: register [username] [password] \n"
         self._register_or_login(register_info, REGISTER)
 
     def do_logout(self, info):
+        "Description: This command allows users to logout and subsequently exit the chatbot. \nSynopsis: logout \n"
         write_queue.put(struct.pack('>I', LOGOUT))
 
     def do_delete(self, info):
+        "Description: This command allows users to delete their account and subsequently exit the chatbot. \nSynopsis: delete\n"
         write_queue.put(struct.pack('>I', DELETE))
 
     def do_find(self, exp): 
+        "Description: This command allows users to find users by a regex expression. \nSynopsis: find [regex]\n"
         if len(exp) > MAX_LENGTH:
             print("Expression is too long. Please try again!")
             return
         write_queue.put(struct.pack('>I', FIND) + struct.pack('>I', len(exp)) + exp.encode('utf-8'))
     
     def do_send(self, info): 
+        "Description: This command allows users to send a message. \nSynopsis: send [username] [password] \n"
         info = info.split(' ', 1)
         if len(info) != 2:
             print("Incorrect arguments: correct form is send [username] [message]. Please try again!")
