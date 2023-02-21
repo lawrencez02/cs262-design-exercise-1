@@ -138,5 +138,5 @@ if __name__ == '__main__':
         os._exit(1)
     # if any other exceptions are caught (for example, something wrong with server), also shut down program.
     except: 
-        print("Exception caught, client existing.")
+        print("Exception caught, client exiting.")
         os._exit(1)

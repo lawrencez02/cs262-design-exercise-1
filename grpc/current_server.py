@@ -21,13 +21,13 @@ class ChatBot(current_pb2_grpc.ChatBotServicer):
         if request.username in users: 
             return current_pb2.Status(code=-1, message="Username already exists. Please try again!")
         # if username/password contains banned character (. * or spaces), notify client 
-        elif bool(re.search(r'[\s.\*]', request.username)) or bool(re.search(r'\s', request.password)): 
-            return current_pb2.Status(code=-1, message="Characters '.' and '*' not allowed in usernames. Spaces are not allowed in username or password. Please try again!")
+        elif any(c in ".+*?^$()[]{}|\\" for c in request.username): 
+            return current_pb2.Status(code=-1, message="Special characters not allowed in usernames. Please try again!")
         # otherwise, create an account with the specified username and password by adding username to users with corresponding password as value and adding username to messages_dict with corresponding empty queue.Queue() object as value 
         else: 
             users[request.username] = request.password 
             messages_dict[request.username] = queue.Queue()
-            return current_pb2.Status(code=1, message="You've successfully registered. Please login to start sending messages.")
+            return current_pb2.Status(code=1, message=f"{request.username} successfully registered, please log in!")
     
     def login(self, request, context): 
         # if username can't be found in users or password doesn't match, tell client to try again 
@@ -94,7 +94,7 @@ def server():
     # add_ChatBotServicer_to_server is a function automatically generated in current_pb2_grpc and links server-side implementation to server object created above
     current_pb2_grpc.add_ChatBotServicer_to_server(ChatBot(), server)
     # specify which port server is listening to
-    server.add_insecure_port('[::]:50051')
+    server.add_insecure_port('[::]:12984')
     print("gRPC starting")
     # start the server 
     server.start()
