@@ -9,8 +9,7 @@ import sys
 
 # Command line interface: constantly listens for and handles command line input from users
 class UserInput(Cmd): 
-    # users will see this intro as soon as python current_client.py is run 
-    intro = 'Welcome! Type help or ? to list commands. To see what a particular command does and how to invoke it, type help <command>. \n'
+    intro = "Welcome! Type help or ? to list commands. To see what a particular command does and how to invoke it, type help <command>. \n"
 
     def __init__(self, client): 
         # give access to all methods and properties of the parent class (Cmd)
@@ -61,8 +60,7 @@ class UserInput(Cmd):
         print(status.message)
 
     def do_send(self, info):
-        # specifies what users will see when they type help send
-        "Description: This command allows users to send a message. \nSynopsis: send [username] [password] \n"
+        "Description: This command allows users to send a message. \nSynopsis: send [username] [message] \n"
         # split command line arguments into send_to and message
         info = info.split(' ', 1)
         if len(info) != 2:
@@ -96,9 +94,7 @@ class UserInput(Cmd):
         os._exit(1)
 
     def do_find(self, exp): 
-        # specifies what users will see when they type help find
-        # exp is what the users type in (i.e. the username they want to find)
-        # package exp into Username object, give to stub.find, and save return value of stub.find in results
+        "Description: This command allows users to find users by a regex expression. \nSynopsis: find [regex]\n"
         results = self.client.stub.find(current_pb2.Username(username=exp))
         # stub.find returns an iterator, so results should be iterated over
         for result in results: 
