@@ -6,7 +6,6 @@ import queue
 import re
 from constants import *
 
-host, port = "", PORT # empty host string means server is reachable by any address it has
 # stores all users: username maps to password
 users = {}
 # stores all online users: username maps to (socket, data)
@@ -17,7 +16,7 @@ messages_queue = {}
 
 
 class Server(): 
-    def __init__(self): 
+    def __init__(self, host, port): 
         # initialize listening socket on server that accepts new client connections
         lsock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         lsock.bind((host, port))
@@ -190,4 +189,5 @@ class Server():
         
 
 if __name__ == '__main__': 
-    Server().run()
+    host, port = "", PORT # empty host string means server is reachable by any address it has
+    Server(host, port).run()

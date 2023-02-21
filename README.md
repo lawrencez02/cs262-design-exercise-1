@@ -24,5 +24,8 @@ Therefore, a typical workflow in the chat application might look like: "register
 
 Note that to close the chatbot clients or the server, you can press Control-C. Finally, you can also type "help" or "?" into the client command line to receive further help or clarification on any of the above commands. Note also that the command-line input will give an error message stating a command is of unknown syntax if it does not belong to one of the above forms (matching lowercase and all).
 
+# Testing
+Note that in our testing we focus only on the logic and functionality of our client code, server code, and the wire protocol in-between. In particular, we do NOT test the functionality of various libraries that we used, such as the Cmd library, and instead take those by assumption to be fully functional. We created unit tests using the Python unittest framework, in test.py files.
+
 # Engineering Notebook
 For more documentation and details on the chatbot functions, and to see more technical discussion on the design of our wire protocol and the gRPC version, please see the following [engineering notebook](https://docs.google.com/document/d/1_woX4jMeICmyr4oACuNrLt2HmFSQO7RKk35GuqDuTLs/edit?usp=sharing).
