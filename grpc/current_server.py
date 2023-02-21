@@ -101,8 +101,6 @@ def server():
     try: 
         # block current thread until server stops
         server.wait_for_termination()
-        # sleep to make sure main loop doesn't exit before catching 
-        while True: time.sleep(100)
     # handle keyboard exceptions
     except KeyboardInterrupt: 
         print("Caught keyboard interruption exception, server exiting.")

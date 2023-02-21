@@ -57,6 +57,7 @@ class UserInput(Cmd):
             # start the thread which iterates through self.client.receive_stream and prints them out
             y = threading.Thread(target=self.client.receive)
             y.start()
+            # y.join()
         print(status.message)
 
     def do_send(self, info):
@@ -130,8 +131,8 @@ if __name__ == '__main__':
         # start the thread which runs the command line interface and constantly listens for user input 
         z = threading.Thread(target=UserInput(client).cmdloop)
         z.start()
-        # sleep to make sure main loop doesn't exit before catching the exception 
-        while True: time.sleep(100)
+        # join z to main thread to make sure main thread doesn't exit before catching the exception 
+        z.join()
     # if ctrl c is hit, shut down program 
     except KeyboardInterrupt: 
         print("Caught keyboard interrupt exception, client exiting")
