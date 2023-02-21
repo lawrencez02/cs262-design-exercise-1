@@ -28,7 +28,7 @@ class UserInput(Cmd):
         # split command line arguments in username and password 
         register_info = register_info.split(' ')
         if len(register_info) != 2:
-            print(f"Incorrect arguments: correct form is register [username] [password]. Please try again!")
+            print("Incorrect arguments: correct form is register [username] [password]. Please try again!")
             return
         username, password = register_info
         # package username and password into User and call stub.register 
