@@ -48,7 +48,6 @@ class ChatBot(current_pb2_grpc.ChatBotServicer):
             return current_pb2.Status(code=-1, message="You need to be logged in. Please try again!")
 
     def send(self, request, context): 
-        print("Got request " + str(request))
         # check to make sure request.from_ is a valid username
         if request.from_ not in users:
             return current_pb2.Status(code=-1, message="You need to be logged in to send a message. Please try again!") 
@@ -90,20 +89,27 @@ class ChatBot(current_pb2_grpc.ChatBotServicer):
 
         
 def server(): 
+    # create a server object
     server = grpc.server(futures.ThreadPoolExecutor(max_workers=40))
+    # add_ChatBotServicer_to_server is a function automatically generated in current_pb2_grpc and links server-side implementation to server object created above
     current_pb2_grpc.add_ChatBotServicer_to_server(ChatBot(), server)
+    # specify which port server is listening to
     server.add_insecure_port('[::]:50051')
     print("gRPC starting")
+    # start the server 
     server.start()
     try: 
+        # block current thread until server stops
         server.wait_for_termination()
         # sleep to make sure main loop doesn't exit before catching 
         while True: time.sleep(100)
+    # handle keyboard exceptions
     except KeyboardInterrupt: 
         print("Caught keyboard interruption exception, server exiting.")
     finally: 
         os._exit(1)
 
+# main loop 
 if __name__ == '__main__':
     server()
     
