@@ -8,7 +8,7 @@ from constants import *
 
 host, port = "", PORT # empty host string means server is reachable by any address it has
 # stores all users: username maps to password
-users = {"catherine": "c", "test": "test"}
+users = {}
 # stores all online users: username maps to (socket, data)
 active_conns = {} 
 # stores all messages needing to be sent to offline users once they log back in:
