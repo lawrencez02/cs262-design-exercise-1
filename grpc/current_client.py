@@ -60,6 +60,7 @@ class UserInput(Cmd):
         print(status.message)
 
     def do_send(self, info):
+        # specifies what users will see when they type help send 
         "Description: This command allows users to send a message. \nSynopsis: send [username] [message] \n"
         # split command line arguments into send_to and message
         info = info.split(' ', 1)
