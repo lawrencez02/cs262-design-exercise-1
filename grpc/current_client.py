@@ -5,17 +5,20 @@ import current_pb2_grpc
 import threading
 import time
 import os
+import sys
 
 # Command line interface: constantly listens for and handles command line input from users
 class UserInput(Cmd): 
     intro = "Welcome! Type help or ? to list commands. To see what a particular command does and how to invoke it, type help <command>. \n"
 
     def __init__(self, client): 
+        # give access to all methods and properties of the parent class (Cmd)
         super().__init__()
         # needs to know about client to access the stub (self.client.stub) 
         self.client = client
 
     def do_register(self, register_info): 
+        # specifies what users will see when they type help register 
         "Description: This command allows users to create an account. \nSynopsis: register [username] [password] \n"
         # self.client.username is only set after logging in successfully 
         # therefore if self.client.username is set, user is already logged in and shouldn't be able to register
@@ -33,6 +36,7 @@ class UserInput(Cmd):
         print(status.message)
     
     def do_login(self, login_info): 
+        # specifies what users will see when they type help login
         "Description: This command allows users to login once they have an account. \nSynopsis: login [username] [password] \n"
         # checks if user is logged in; if yes, shouldn't be allowed to login again
         if self.client.username: 
@@ -41,7 +45,7 @@ class UserInput(Cmd):
         # split command line arguments in username and password
         login_info = login_info.split(' ')
         if len(login_info) != 2:
-            print(f"Incorrect arguments: correct form is login [username] [password]. Please try again!")
+            print("Incorrect arguments: correct form is login [username] [password]. Please try again!")
             return
         username, password = login_info 
         # package username and password into User and call stub.login
@@ -71,6 +75,7 @@ class UserInput(Cmd):
             print(status.message)
     
     def do_logout(self, none): 
+        # specifies what users will see when they type help logout
         "Description: This command allows users to logout and subsequently exit the chatbot. \nSynopsis: logout \n"
         # close channel 
         self.client.channel.close() 
@@ -78,6 +83,7 @@ class UserInput(Cmd):
         os._exit(1)
 
     def do_delete(self, none): 
+        # specifies what users will see when they type help delete
         "Description: This command allows users to delete their account and subsequently exit the chatbot. \nSynopsis: delete\n"
         # package username into a Username and call stub.delete 
         status = self.client.stub.delete(current_pb2.Username(username=self.client.username))
@@ -90,16 +96,17 @@ class UserInput(Cmd):
     def do_find(self, exp): 
         "Description: This command allows users to find users by a regex expression. \nSynopsis: find [regex]\n"
         results = self.client.stub.find(current_pb2.Username(username=exp))
+        # stub.find returns an iterator, so results should be iterated over
         for result in results: 
             print(result.username)
 
 
 class Client:
-    def __init__(self): 
+    def __init__(self, host, port): 
         # no username until client is logged in 
         self.username = None
-        # open channel and create stub 
-        self.channel = grpc.insecure_channel('localhost:50051')
+        # open channel at the specified host and port which server is listening on and create stub 
+        self.channel = grpc.insecure_channel(f'{host}:{port}')
         self.stub = current_pb2_grpc.ChatBotStub(self.channel)
     
     # function which constantly iterates through the stream returned by stub.receive call for new messages and prints them 
@@ -107,7 +114,7 @@ class Client:
         while True: 
             try:
                 message = next(self.receive_stream)
-                print(message.from_, ": ", message.message)
+                print(message.from_, ":", message.message)
             # exception occurs when channel is closed and thus self.receive_stream  is cancelled (either because there's been some type of failure or someone has stopped the server)
             # in this case, shut down program 
             except grpc.RpcError: 
@@ -117,7 +124,8 @@ class Client:
 if __name__ == '__main__':
     try: 
         # create an instance of Client class because the moment this file is run, we technically have a new client 
-        client = Client()
+        host, port = sys.argv[1], int(sys.argv[2])
+        client = Client(host, port)
         # start the thread which runs the command line interface and constantly listens for user input 
         z = threading.Thread(target=UserInput(client).cmdloop)
         z.start()
@@ -127,6 +135,7 @@ if __name__ == '__main__':
     except KeyboardInterrupt: 
         print("Caught keyboard interrupt exception, client exiting")
         os._exit(1)
+    # if any other exceptions are caught (for example, something wrong with server), also shut down program.
     except: 
-        print("Server shutting down.")
+        print("Exception caught, client existing.")
         os._exit(1)
