@@ -9,8 +9,7 @@ import os
 import time
 from constants import *
 
-# client connects to host and port given as command-line arguments to client.py
-host, port = sys.argv[1], int(sys.argv[2])
+
 # thread-safe queue for outgoing messages to be sent from client to server
 write_queue = queue.Queue() 
 
@@ -80,7 +79,7 @@ class UserInput(Cmd):
 
 
 class Client(): 
-    def __init__(self): 
+    def __init__(self, host, port): 
         # selector used by client's write thread to know when socket is writable
         self.sel_write = selectors.DefaultSelector() 
         # selector used by client's read thread to know when socket is readable
@@ -142,8 +141,8 @@ class Client():
 
 if __name__ == '__main__':
     try:
-        # instantiate client
-        client = Client() 
+        # client connects to host and port given as command-line arguments to client.py
+        client = Client(sys.argv[1], int(sys.argv[2])) 
         # start separate threads for command-line input, sending messages, and receiving messages
         threading.Thread(target=client.receive).start()
         threading.Thread(target=UserInput().cmdloop).start()

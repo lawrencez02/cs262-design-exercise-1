@@ -10,11 +10,9 @@ import os
 import difflib
 import time
 
-# we want to capture what is printed to the terminal 
+# redirect standard output of function f applied to arguments arg to string output
 def print_it(f,arg):
-      # create StringIO object
       capturedOutput = io.StringIO() 
-      # redirect sys.stdout to capturedOutput
       sys.stdout = capturedOutput
       f(arg)
       time.sleep(1)
@@ -49,7 +47,7 @@ assert(print_it(user_input1.do_login, "username1 password") == "You need to be l
 # check to make sure a logged in user can send a message to themselves and receive it on the command line 
 assert(print_it(user_input1.do_send, "username1 hi") == "username1 : hi")
 
-# creating another client using same process as before
+# creating another client using same process as be fore
 client2 = current_client.Client('localhost', 11111) 
 user_input2 = current_client.UserInput(client2)
 
