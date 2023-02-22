@@ -1,4 +1,5 @@
 import unittest
+from unittest import mock
 import io
 import sys
 import time
@@ -9,7 +10,7 @@ import os
 from constants import *
 
 
-test_port = 26222
+test_port = 2622
 server = server.Server("", test_port, logs=False)
 client1 = client.Client("localhost", test_port)
 client2 = client.Client("localhost", test_port)
@@ -100,6 +101,24 @@ class TestWireProtocol(unittest.TestCase):
         self.assertEqual(print_it(user_input1.do_find, "3"), "Users: 3user")
         self.assertEqual(print_it(user_input1.do_find, "l.wr"), "Users: lawrence")
         self.assertEqual(print_it(user_input1.do_find, ".at"), "Users: catherine")
+
+    def test_logout(self):
+        os._exit = unittest.mock.MagicMock()
+        self.assertEqual(print_it(user_input1.do_logout, ""), "Logged out successfully!")
+        assert os._exit.called
+        self.assertTrue("user1" in server.users)
+        self.assertTrue("user2" in server.users)
+        self.assertFalse("user1" in server.active_conns)
+        self.assertTrue("user2" in server.active_conns)
+
+    def test_delete(self):
+        os._exit = unittest.mock.MagicMock()
+        self.assertEqual(print_it(user_input2.do_delete, ""), "Deleted account successfully!")
+        assert os._exit.called
+        self.assertTrue("user1" in server.users)
+        self.assertFalse("user2" in server.users)
+        self.assertFalse("user1" in server.active_conns)
+        self.assertFalse("user2" in server.active_conns)
 
 # function to identify what is a test class object in this file / module
 def isTestClass(x):
