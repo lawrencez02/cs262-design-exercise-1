@@ -126,7 +126,7 @@ class TestDelete(unittest.TestCase):
         self.assertEqual(print_it(user_input3.do_delete, ""), "You need to be logged in. Please try again!")
 
     def test_delete_successful(self): 
-        self.assertEqual(print_it(user_input1.do_delete, ""), "username1 deleted successfully!\nServer shutting down.")
+        self.assertEqual(print_it(user_input1.do_delete, ""), "username1 deleted successfully!")
         self.assertFalse("username1" in current_server.users)
         self.assertFalse("username1" in current_server.messages_dict)
         self.assertEqual(print_it(user_input2.do_send, "username1 hi"), "Recipient user does not exist. Please try again!")
