@@ -79,6 +79,10 @@ class UserInput(Cmd):
     def do_logout(self, none): 
         # specifies what users will see when they type help logout
         "Description: This command allows users to logout and subsequently exit the chatbot. \nSynopsis: logout \n"
+        # if not logged in, don't let logout
+        if not self.client.username: 
+            print("You need to be logged in. Please try again!")
+            return 
         # close channel 
         self.client.channel.close() 
         # shut down program 
@@ -87,7 +91,11 @@ class UserInput(Cmd):
     def do_delete(self, none): 
         # specifies what users will see when they type help delete
         "Description: This command allows users to delete their account and subsequently exit the chatbot. \nSynopsis: delete\n"
-        # package username into a Username and call stub.delete 
+        # if not logged in, don't let log out
+        if not self.client.username: 
+            print("You need to be logged in. Please try again!")
+            return 
+         # package username into a Username and call stub.delete 
         status = self.client.stub.delete(current_pb2.Username(username=self.client.username))
         print(status.message)
         # close channel 
