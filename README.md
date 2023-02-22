@@ -18,7 +18,7 @@ For both the wire and gRPC version, the client behavior is the same. There are 6
     * Send will have no confirmation message if it was successfully completed, and it will have an error message if not (e.g., incorrect syntax, message or username too long, current client not being logged in, or recipient username not existing as an account).
 * find [regex] allows users to find users on the chatbot by a regex expression.
     * Find will return the result of the user search if it was successfully completed, and it will have an error message otherwise (e.g., incorrect syntax or regex expression too long).
-    * For specific details on how Python regex works, please see [this documentation](https://www.w3schools.com/python/python_regex.asp). The most important thing to note is that "." is a wildcard character. Note that our regex matches a username if any substring of the username matches the regex expression (e.g., "." will thus match any username). 
+    * For specific details on how Python regex works, please see [this documentation](https://www.w3schools.com/python/python_regex.asp). The most important thing to note is that "." is a wildcard character. Note that our regex matches a username if the beginning of the username matches the regex expression (e.g., "." will thus match any username). 
 
 Therefore, a typical workflow in the chat application might look like: "register User1 Password1", "login User1 Password1", some "send" or "find" commands, and finally a "logout" or "delete." There is a limit on username/password/message size, but it is large and probably will not be encountered in everyday use. 
 

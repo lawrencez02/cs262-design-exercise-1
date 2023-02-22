@@ -6,28 +6,28 @@ import queue
 import re
 from constants import *
 
-# stores all users: username maps to password
-users = {}
-# stores all online users: username maps to (socket, data)
-active_conns = {} 
-# stores all messages needing to be sent to offline users once they log back in:
-# intended (offline) recipient maps to a queue of (sender, message)
-messages_queue = {}
-
 
 class Server(): 
-    def __init__(self, host, port): 
+    def __init__(self, host, port, logs=True): 
         # initialize listening socket on server that accepts new client connections
         lsock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         lsock.bind((host, port))
         lsock.listen()
-        print(f"Server listening on {(host, port)}")
+        self.logs = logs
+        if logs: print(f"Server listening on {(host, port)}")
         lsock.setblocking(False)
         # register read events on listening socket in selector so that server knows when new client is trying to connect
         self.sel = selectors.DefaultSelector() 
         self.sel.register(lsock, selectors.EVENT_READ, data=None)
         self.sock = lsock 
-    
+        # stores all users: username maps to password
+        self.users = {}
+        # stores all online users: username maps to (socket, data)
+        self.active_conns = {} 
+        # stores all messages needing to be sent to offline users once they log back in:
+        # intended (offline) recipient maps to a queue of (sender, message)
+        self.messages_queue = {}
+            
     # Receive exactly n bytes from specified socket, returning None otherwise
     def _recvall(self, sock, n): 
         data = bytearray() 
@@ -53,7 +53,7 @@ class Server():
     # Accept connection from a new client
     def accept_wrapper(self):
         conn, addr = self.sock.accept() 
-        print(f"Accepted connection from {addr}")
+        if self.logs: print(f"Accepted connection from {addr}")
         conn.setblocking(False)
         # store with the new connection the address of the client, any bytes the server should
         # send to the new client, and the username of the new client (if logged in)
@@ -70,22 +70,22 @@ class Server():
             raw_opcode = self._recvall(sock, 4)
             if not raw_opcode: # if client socket has closed
                 if data.username != "": 
-                    del active_conns[data.username] # remove user as active
+                    del self.active_conns[data.username] # remove user as active
                 self.sel.unregister(sock) # unregister socket from selector, so server doesn't track its events anymore
                 sock.close() # close corresponding server socket
-                print(f"Closed socket with address {data.addr}")
+                if self.logs: print(f"Closed socket with address {data.addr}")
                 return
             opcode = struct.unpack('>I', raw_opcode)[0]
 
         # if connection can be written to and connection represents a logged-in user
         if mask & selectors.EVENT_WRITE and data.username != '': 
             # send previous messages to this user that were sent when they were offline
-            if data.username in messages_queue and not messages_queue[data.username].empty(): 
-                while not messages_queue[data.username].empty(): 
-                    sentfrom, msg = messages_queue[data.username].get()
+            if data.username in self.messages_queue and not self.messages_queue[data.username].empty(): 
+                while not self.messages_queue[data.username].empty(): 
+                    sentfrom, msg = self.messages_queue[data.username].get()
                     # Pack RECEIVE opcode, length of sender, sender, length of message, and message to send over the wire
                     sock.sendall(struct.pack('>I', RECEIVE) + struct.pack('>I', len(sentfrom)) + sentfrom.encode('utf-8') + struct.pack('>I', len(msg)) + msg.encode('utf-8'))    
-                messages_queue.pop(data.username, None) 
+                self.messages_queue.pop(data.username, None) 
             # send messages to this user that were sent when they were online
             if data.outb: 
                 sock.sendall(data.outb)
@@ -99,19 +99,19 @@ class Server():
                     self._send_msg(sock, PRIVILEGE_ERROR, "You need to be logged out to login. Please try again!")
                     return
                 # ensure login is allowed only if username and password are verified
-                if username in users and users[username] == password: 
+                if username in self.users and self.users[username] == password: 
                     # only allow an account to be logged in from one client/socket at a time
-                    if username in active_conns:
+                    if username in self.active_conns:
                         self._send_msg(sock, LOGIN_ERROR, "User already logged in in a different location. Please try again!")
                         return
                     # login client by setting socket's data to specified username and adding it to active connections
                     data.username = username
-                    active_conns[username] = (sock, data)
-                    print(f"{username} logged in successfully")
+                    self.active_conns[username] = (sock, data)
+                    if self.logs: print(f"{username} logged in successfully")
                     # send appropriate login or register confirmation over the wire
                     self._send_msg(sock, LOGIN_CONFIRM, f"Logged in as {username}!")
                 else: 
-                    print(f"Unsuccessful login attempt by {username}")
+                    if self.logs: print(f"Unsuccessful login attempt by {username}")
                     self._send_msg(sock, LOGIN_ERROR, "Incorrect username or password. Please try again!")
             elif opcode == REGISTER: # client socket is trying to register
                 username, password = self._recv_n_args(sock, 2) # receive username and password from the wire
@@ -120,12 +120,12 @@ class Server():
                     self._send_msg(sock, PRIVILEGE_ERROR, "You need to be logged out to register. Please try again!")
                     return
                  # ensure clients must register unique usernames
-                if username in users:
+                if username in self.users:
                     self._send_msg(sock, REGISTER_ERROR, "Username already exists. Please try again!")
                     return
                 # add registration's username and passwords to dictionary of users
-                users[username] = password
-                print(f"{username} successfully registered")
+                self.users[username] = password
+                if self.logs: print(f"{username} successfully registered")
                 self._send_msg(sock, REGISTER_CONFIRM, f"{username} successfully registered, please log in!")
             elif opcode == LOGOUT or opcode == DELETE: # client socket is trying to logout or delete account
                 # ensure only logged in clients can logout or delete their account
@@ -133,16 +133,16 @@ class Server():
                     self._send_msg(sock, PRIVILEGE_ERROR, "You need to be logged in. Please try again!")
                     return
                 # drop socket from active connections because logout/delete both cause client shutdown
-                active_conns.pop(data.username, None)
+                self.active_conns.pop(data.username, None)
                 if opcode == LOGOUT:
                     self._send_msg(sock, LOGOUT_CONFIRM, "Logged out successfully!")
-                    print(f"{data.username} logged out successfully")
+                    if self.logs: print(f"{data.username} logged out successfully")
                 elif opcode == DELETE:
-                    # delete user permanently by removing them from users dictionary and messages_queue
-                    messages_queue.pop(data.username, None)
-                    users.pop(data.username, None)
+                    # delete user permanently by removing them from users dictionary and self.messages_queue
+                    self.messages_queue.pop(data.username, None)
+                    self.users.pop(data.username, None)
                     self._send_msg(sock, DELETE_CONFIRM, "Deleted account successfully!")
-                    print(f"{data.username} deleted successfully")
+                    if self.logs: print(f"{data.username} deleted successfully")
                 # disassociate current socket from the account
                 data.username = ''
             elif opcode == SEND: # client socket is trying to send a message
@@ -151,20 +151,20 @@ class Server():
                 if not data.username:
                     self._send_msg(sock, PRIVILEGE_ERROR, "You need to be logged in to send a message. Please try again!")
                     return
-                if sendto not in active_conns: # recipient is not online
-                    if sendto not in users: # recipient does not exist, so send error back to client
+                if sendto not in self.active_conns: # recipient is not online
+                    if sendto not in self.users: # recipient does not exist, so send error back to client
                         self._send_msg(sock, SEND_ERROR, "Recipient user does not exist. Please try again!")
-                    else: # otherwise, put message in messages_queue to be sent when recipient comes back online
-                        if sendto not in messages_queue: 
-                            messages_queue[sendto] = queue.Queue()
-                        messages_queue[sendto].put((data.username, msg))
+                    else: # otherwise, put message in self.messages_queue to be sent when recipient comes back online
+                        if sendto not in self.messages_queue: 
+                            self.messages_queue[sendto] = queue.Queue()
+                        self.messages_queue[sendto].put((data.username, msg))
                 else: # recipient is online
                     # attach message to recipient's connection's data, to be sent to recipient's client by server soon
-                    active_conns[sendto][1].outb += struct.pack('>I', RECEIVE) + struct.pack('>I', len(data.username)) + data.username.encode('utf-8') + struct.pack('>I', len(msg)) + msg.encode('utf-8')
+                    self.active_conns[sendto][1].outb += struct.pack('>I', RECEIVE) + struct.pack('>I', len(data.username)) + data.username.encode('utf-8') + struct.pack('>I', len(msg)) + msg.encode('utf-8')
             elif opcode == FIND: # client socket trying to find users 
                 exp = self._recv_n_args(sock, 1)[0] # receive command-line input of regex expression
                 regex = re.compile(exp) # compile regex expression
-                result = "Users: " + ', '.join(list(filter(regex.match, users.keys()))) # compute users that match the regex
+                result = "Users: " + ', '.join(list(filter(regex.match, self.users.keys()))) # compute users that match the regex
                 self._send_msg(sock, FIND_RESULT, result) # return the result to the client socket
     
     # main loop that runs server

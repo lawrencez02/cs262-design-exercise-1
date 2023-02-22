@@ -10,14 +10,16 @@ import time
 from constants import *
 
 
-# thread-safe queue for outgoing messages to be sent from client to server
-write_queue = queue.Queue() 
-
-
 # takes and parses command-line user input for all different commands
 class UserInput(Cmd): 
     # intro message displayed in command-line prompt for client
     intro = "Welcome! Type help or ? to list commands. To see what a particular command does and how to invoke it, type help <command>. \n"
+
+    def __init__(self, client): 
+        # give access to all methods and properties of the parent class (Cmd)
+        super().__init__()
+        # needs to know about client to access client's write queue
+        self.client = client
 
     def do_login(self, login_info): 
         "Description: This command allows users to login once they have an account. \nSynopsis: login [username] [password] \n"
@@ -29,11 +31,11 @@ class UserInput(Cmd):
 
     def do_logout(self, info):
         "Description: This command allows users to logout and subsequently exit the chatbot. \nSynopsis: logout \n"
-        write_queue.put(struct.pack('>I', LOGOUT)) # send LOGOUT opcode over the wire
+        self.client.write_queue.put(struct.pack('>I', LOGOUT)) # send LOGOUT opcode over the wire
 
     def do_delete(self, info):
         "Description: This command allows users to delete their account and subsequently exit the chatbot. \nSynopsis: delete\n"
-        write_queue.put(struct.pack('>I', DELETE)) # send DELETE opcode over the wire
+        self.client.write_queue.put(struct.pack('>I', DELETE)) # send DELETE opcode over the wire
 
     def do_find(self, exp): 
         "Description: This command allows users to find users by a regex expression. \nSynopsis: find [regex]\n"
@@ -41,7 +43,7 @@ class UserInput(Cmd):
             print("Expression is too long. Please try again!")
             return
         # send FIND opcode, length of regex expression, and expression itself over the wire
-        write_queue.put(struct.pack('>I', FIND) + struct.pack('>I', len(exp)) + exp.encode('utf-8'))
+        self.client.write_queue.put(struct.pack('>I', FIND) + struct.pack('>I', len(exp)) + exp.encode('utf-8'))
     
     def do_send(self, info): 
         "Description: This command allows users to send a message. \nSynopsis: send [username] [message] \n"
@@ -56,7 +58,7 @@ class UserInput(Cmd):
             print("Username or message is too long. Please try again!")
             return
         # send SEND op code, recipient username length and username, and message length and message over the wire
-        write_queue.put(struct.pack('>I', SEND) + struct.pack('>I', len(send_to)) + send_to.encode('utf-8') + struct.pack('>I', len(msg)) + msg.encode('utf-8'))
+        self.client.write_queue.put(struct.pack('>I', SEND) + struct.pack('>I', len(send_to)) + send_to.encode('utf-8') + struct.pack('>I', len(msg)) + msg.encode('utf-8'))
 
     # Helper function that registers or logins user depending on the opcode given
     def _register_or_login(self, info, opcode):
@@ -75,7 +77,7 @@ class UserInput(Cmd):
             print("Username or password is too long. Please try again!")
             return
         # send LOGIN/REGISTER op code, username length and username, and password length and password over the wire
-        write_queue.put(struct.pack('>I', opcode) + struct.pack('>I', len(username)) + username.encode('utf-8') + struct.pack('>I', len(password)) + password.encode('utf-8'))
+        self.client.write_queue.put(struct.pack('>I', opcode) + struct.pack('>I', len(username)) + username.encode('utf-8') + struct.pack('>I', len(password)) + password.encode('utf-8'))
 
 
 class Client(): 
@@ -88,6 +90,8 @@ class Client():
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.sock.setblocking(True)
         self.sock.connect((host, port))
+        # thread-safe queue for outgoing messages to be sent from client to server
+        self.write_queue = queue.Queue() 
     
     # Receive exactly n bytes from server, returning None otherwise
     def _recvall(self, n): 
@@ -113,7 +117,7 @@ class Client():
         while True: 
             # once the socket with the server is established, send messages from the write_queue
             for _, _ in self.sel_write.select(timeout=None): 
-                self.sock.sendall(write_queue.get())
+                self.sock.sendall(self.write_queue.get())
     
     # Receives messages over the wire from the server
     def receive(self): 
@@ -135,7 +139,6 @@ class Client():
                 else: # display message sent from the server
                     print(self._recv_n_args(1)[0])
                     if statuscode == DELETE_CONFIRM or statuscode == LOGOUT_CONFIRM:
-                        self.sock.close() 
                         os._exit(1)
 
 
@@ -145,7 +148,7 @@ if __name__ == '__main__':
         client = Client(sys.argv[1], int(sys.argv[2])) 
         # start separate threads for command-line input, sending messages, and receiving messages
         threading.Thread(target=client.receive).start()
-        threading.Thread(target=UserInput().cmdloop).start()
+        threading.Thread(target=UserInput(client).cmdloop).start()
         threading.Thread(target=client.send).start()
         # main thread stays infinitely in this try block so that Control-C exception can be dealt with
         while True: time.sleep(100)
