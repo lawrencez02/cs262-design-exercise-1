@@ -129,6 +129,7 @@ class Client:
             # exception occurs when channel is closed and thus self.receive_stream  is cancelled (either because there's been some type of failure or someone has stopped the server)
             # in this case, shut down program 
             except grpc.RpcError as e:
+                # only print out this message when the error comes from server failure 
                 if e.code() == grpc.StatusCode.INTERNAL: 
                     print("Server shutting down.")
                 os._exit(1)
