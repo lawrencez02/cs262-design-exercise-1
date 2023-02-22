@@ -83,6 +83,7 @@ class UserInput(Cmd):
         if not self.client.username: 
             print("You need to be logged in. Please try again!")
             return 
+        print("Logged out successfully!")
         # close channel 
         self.client.channel.close() 
         # shut down program 
@@ -95,7 +96,7 @@ class UserInput(Cmd):
         if not self.client.username: 
             print("You need to be logged in. Please try again!")
             return 
-         # package username into a Username and call stub.delete 
+        # package username into a Username and call stub.delete 
         status = self.client.stub.delete(current_pb2.Username(username=self.client.username))
         print(status.message)
         # close channel 
@@ -127,8 +128,9 @@ class Client:
                 print(message.from_, ": ", message.message, sep="")
             # exception occurs when channel is closed and thus self.receive_stream  is cancelled (either because there's been some type of failure or someone has stopped the server)
             # in this case, shut down program 
-            except grpc.RpcError: 
-                print("Server shutting down.")
+            except grpc.RpcError as e:
+                if e.code() == grpc.StatusCode.INTERNAL: 
+                    print("Server shutting down.")
                 os._exit(1)
                 
 if __name__ == '__main__':
