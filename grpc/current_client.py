@@ -82,7 +82,7 @@ class UserInput(Cmd):
         # close channel 
         self.client.channel.close() 
         # shut down program 
-        os._exit(1)
+        os._exit(2)
 
     def do_delete(self, none): 
         # specifies what users will see when they type help delete
@@ -93,7 +93,7 @@ class UserInput(Cmd):
         # close channel 
         self.client.channel.close() 
         # shut down program 
-        os._exit(1)
+        os._exit(2)
 
     def do_find(self, exp): 
         "Description: This command allows users to find users by a regex expression. \nSynopsis: find [regex]\n"
@@ -116,7 +116,7 @@ class Client:
         while True: 
             try:
                 message = next(self.receive_stream)
-                print(message.from_, ":", message.message)
+                print(message.from_, ": ", message.message, sep="")
             # exception occurs when channel is closed and thus self.receive_stream  is cancelled (either because there's been some type of failure or someone has stopped the server)
             # in this case, shut down program 
             except grpc.RpcError: 
