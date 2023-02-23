@@ -1,7 +1,7 @@
 # Installation and Setup Instructions
 Python version 3.7+ is required: the latest version of Python can be installed at [this link](https://www.python.org/downloads/).
 For the wire protocol version, no additional Python libraries need to be installed. For the gRPC version, the Python library for gRPC needs to be installed at [this link](https://grpc.io/docs/languages/python/quickstart/), and the Python library for Protocol Buffers, protobuf, needs to be installed via pip install --upgrade protobuf.
-Then, to run the server, navigate to the appropriate folder (either grpc or wire) and run "python server.py" or "python current_server.py". To start up a client, navigate to the appropriate folder and run "python client.py [HOST] [PORT]" for the wire version, where HOST is the server machine's address and PORT is the appropriate port number (currently hard-coded to 12984), or "python current_client.py [HOST] [PORT]" for the gRPC version. 
+To obtain this chat application code, first clone this repository via git clone. Then, to run the server, navigate to the appropriate folder (either cd grpc or cd wire) and run "python server.py" or "python current_server.py". To start up a client, navigate to the appropriate folder (either cd grpc or cd wire) and run "python client.py [HOST] [PORT]" for the wire version, where HOST is the server machine's address and PORT is the appropriate port number (currently hard-coded to 12984), or "python current_client.py [HOST] [PORT]" for the gRPC version. 
 If you have trouble starting up the client or the server, be sure to disable your machine's firewall.
 
 # How to Use
